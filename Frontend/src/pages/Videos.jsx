@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchVideos } from "../services/videoService";
+import VideoCard from "../components/VideoCard";
+import React from "react";
 
 export default function Videos() {
   const [videos, setVideos] = useState([]);
@@ -18,17 +20,16 @@ export default function Videos() {
   }, []);
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h1>Debugging Doubts Videos</h1>
+    <div className="min-h-screen bg-gray-100 p-10">
+      <h1 className="text-3xl font-bold mb-8">
+        Latest Videos
+      </h1>
 
-      {videos.map((video) => (
-        <div key={video._id} style={{ marginBottom: "20px" }}>
-          <h3>{video.title}</h3>
-          <p>{video.category}</p>
-          <p>{video.views} views</p>
-          <p>{video.duration}</p>
-        </div>
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {videos.map((video) => (
+          <VideoCard key={video._id} video={video} />
+        ))}
+      </div>
     </div>
   );
 }
