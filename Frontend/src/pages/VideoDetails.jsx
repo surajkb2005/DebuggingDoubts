@@ -10,11 +10,10 @@ export default function VideoDetails() {
     useEffect(() => {
         const fetchVideo = async () => {
             const { data } = await axios.get(
-                "http://localhost:5000/api/videos"
+                `http://localhost:5000/api/videos/${id}`
             );
 
-            const foundVideo = data.find((v) => v._id === id);
-            setVideo(foundVideo);
+            setVideo(data);
         };
 
         fetchVideo();
