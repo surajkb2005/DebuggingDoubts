@@ -25,7 +25,20 @@ const videoSchema = new mongoose.Schema(
     videoId: {
       type: String,
       required: true
-    }
+    },
+    likes: {
+      type: Number,
+      default: 0
+    },
+    comments: [
+      {
+        text: String,
+        createdAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ]
   },
   { timestamps: true }
 );

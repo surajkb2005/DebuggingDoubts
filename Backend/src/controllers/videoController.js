@@ -39,3 +39,39 @@ export const getVideoById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const likeVideo = async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id);
+
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    video.likes += 1;
+    await video.save();
+
+    res.status(200).json({ likes: video.likes });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const addComment = async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id);
+
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    video.comments.push({ text: req.body.text });
+    await video.save();
+
+    res.status(200).json(video.comments);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
