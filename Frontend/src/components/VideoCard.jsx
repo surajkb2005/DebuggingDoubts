@@ -1,8 +1,14 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function VideoCard({ video }) {
+  const navigate = useNavigate();
+
   return (
-    <div className="w-80 bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 cursor-pointer">
+    <div
+      onClick={() => navigate(`/video/${video._id}`)}
+      className="w-80 bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 cursor-pointer"
+    >
       <img
         src={video.thumbnail}
         alt={video.title}

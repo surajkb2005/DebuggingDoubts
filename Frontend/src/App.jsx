@@ -2,6 +2,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Videos from "./pages/Videos";
+import VideoDetails from "./pages/VideoDetails";
 import Navbar from "./components/Navbar";
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Videos />} />
+        <Route path="/video/:id" element={<VideoDetails />} />
       </Routes>
     </>
   );
