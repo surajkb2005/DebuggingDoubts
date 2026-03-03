@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  @apply bg-gray-950 text-gray-100 antialiased;
+}
+
+button {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+input {
+  @apply transition-all duration-200 ease-in-out;
+}
