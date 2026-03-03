@@ -1,0 +1,41 @@
+Debugging-Doubts
+│
+├── Frontend
+│   ├── public
+│   ├── src
+│   │   ├── assets
+│   │   ├── Auth
+│   │   │   ├── Login.jsx
+│   │   │   ├── Register.jsx
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── components
+│   │   │   ├── Navbar.jsx
+│   │   │   └── VideoCard.jsx
+│   │   ├── context
+│   │   │   └── AuthContext.jsx
+│   │   ├── pages
+│   │   │   ├── Videos.jsx
+│   │   │   └── VideoDetails.jsx
+│   │   ├── services
+│   │   │   ├── authService.js
+│   │   │   ├── axiosInstance.js
+│   │   │   └── videoService.js
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   └── package.json
+│
+└── Backend
+    ├── src
+    │   ├── controllers
+    │   │   ├── authController.js
+    │   │   └── videoController.js
+    │   ├── middleware
+    │   │   └── authMiddleware.js
+    │   ├── models
+    │   │   ├── User.js
+    │   │   └── Video.js
+    │   ├── routes
+    │   │   ├── authRoutes.js
+    │   │   └── videoRoutes.js
+    │   └── server.js
+    └── package.json
