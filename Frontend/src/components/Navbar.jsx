@@ -13,7 +13,7 @@ const Navbar = () => {
         {/* Logo */}
         <Link
           to="/"
-          className="text-2xl font-bold tracking-wide text-white hover:text-blue-400 transition"
+          className="text-2xl font-bold tracking-wide bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300"
         >
           Debugging Doubts
         </Link>
@@ -24,11 +24,21 @@ const Navbar = () => {
           <NavLink
             to="/"
             className={({ isActive }) =>
-              `relative hover:text-blue-400 transition ${isActive ? "text-blue-500" : "text-gray-300"
+              `relative px-2 py-1 transition-all duration-300 ${isActive
+                ? "text-blue-400"
+                : "text-gray-300 hover:text-white"
               }`
             }
           >
-            Home
+            {({ isActive }) => (
+              <>
+                Home
+                <span
+                  className={`absolute left-0 -bottom-1 h-[2px] w-full bg-blue-500 transition-all duration-300 ${isActive ? "scale-x-100" : "scale-x-0"
+                    } origin-left`}
+                />
+              </>
+            )}
           </NavLink>
 
           {user ? (
