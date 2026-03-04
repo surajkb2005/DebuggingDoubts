@@ -53,15 +53,17 @@ export default function Videos() {
       </div>
 
       {/* VIDEO GRID SECTION */}
-      <div className="min-h-screen bg-gray-50 py-16 px-10">
-        <h1 className="text-3xl font-bold mb-10 text-gray-900">
-          Latest Videos
-        </h1>
+      <div className="py-16">
+        <div className="max-w-7xl mx-auto px-6">
+          <h1 className="text-3xl font-bold mb-10 text-gray-900">
+            Latest Videos
+          </h1>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {videos.map((video) => (
-            <VideoCard key={video._id} video={video} />
-          ))}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {videos.map((video) => (
+              <VideoCard key={video._id} video={video} />
+            ))}
+          </div>
         </div>
       </div>
     </>

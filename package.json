@@ -2,5 +2,28 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.3"
-  }
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "name": "debuggingdoubts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "backend": "cd Backend && npm run dev",
+    "frontend": "cd Frontend && npm run dev",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/surajkb2005/DebuggingDoubts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/surajkb2005/DebuggingDoubts/issues"
+  },
+  "homepage": "https://github.com/surajkb2005/DebuggingDoubts#readme"
 }

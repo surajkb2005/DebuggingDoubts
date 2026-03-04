@@ -52,75 +52,77 @@ export default function VideoDetails() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 p-10">
-            <div className="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-gray-100 py-16">
+            <div className="max-w-5xl mx-auto px-6">
+                <div className="bg-white p-6 rounded-xl shadow-lg">
 
-                {video.videoId && (
-                    <iframe
-                        className="w-full h-[400px] rounded-xl mb-6"
-                        src={`https://www.youtube.com/embed/${video.videoId}`}
-                        title={video.title}
-                        allowFullScreen
-                    ></iframe>
-                )}
+                    {video.videoId && (
+                        <iframe
+                            className="w-full h-[400px] rounded-xl mb-6"
+                            src={`https://www.youtube.com/embed/${video.videoId}`}
+                            title={video.title}
+                            allowFullScreen
+                        ></iframe>
+                    )}
 
-                <h1 className="text-2xl font-bold mb-2">
-                    {video.title}
-                </h1>
-                <div className="flex items-center gap-6 mb-6">
-
-                    <button
-                        onClick={handleLike}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-                    >
-                        👍 Like ({video.likes})
-                    </button>
-
-                    <span className="text-gray-600">
-                        {video.views} views
-                    </span>
-
-                </div>
-                <div className="mt-6">
-
-                    <h2 className="text-xl font-semibold mb-4">
-                        Comments
-                    </h2>
-
-                    <div className="flex gap-4 mb-6">
-                        <input
-                            type="text"
-                            value={commentText}
-                            onChange={(e) => setCommentText(e.target.value)}
-                            placeholder="Write a comment..."
-                            className="flex-1 border rounded-lg px-4 py-2"
-                        />
+                    <h1 className="text-2xl font-bold mb-2">
+                        {video.title}
+                    </h1>
+                    <div className="flex items-center gap-6 mb-6">
 
                         <button
-                            onClick={handleComment}
-                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
+                            onClick={handleLike}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
                         >
-                            Post
+                            👍 Like ({video.likes})
                         </button>
+
+                        <span className="text-gray-600">
+                            {video.views} views
+                        </span>
+
+                    </div>
+                    <div className="mt-6">
+
+                        <h2 className="text-xl font-semibold mb-4">
+                            Comments
+                        </h2>
+
+                        <div className="flex gap-4 mb-6">
+                            <input
+                                type="text"
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                                placeholder="Write a comment..."
+                                className="flex-1 border rounded-lg px-4 py-2"
+                            />
+
+                            <button
+                                onClick={handleComment}
+                                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
+                            >
+                                Post
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {video.comments?.map((comment, index) => (
+                                <div
+                                    key={index}
+                                    className="bg-gray-100 p-3 rounded-lg"
+                                >
+                                    {comment.text}
+                                </div>
+                            ))}
+                        </div>
+
                     </div>
 
-                    <div className="space-y-4">
-                        {video.comments?.map((comment, index) => (
-                            <div
-                                key={index}
-                                className="bg-gray-100 p-3 rounded-lg"
-                            >
-                                {comment.text}
-                            </div>
-                        ))}
-                    </div>
+                    <p className="text-gray-600">
+                        {video.views} views
+                    </p>
 
                 </div>
-
-                <p className="text-gray-600">
-                    {video.views} views
-                </p>
-
             </div>
         </div>
     );
