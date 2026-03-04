@@ -1,5 +1,6 @@
+//Backend/src/controllers/videoController.js
 import Video from "../models/Video.js";
-
+import Activity from "../models/Activity.js";
 // GET all videos
 export const getAllVideos = async (req, res) => {
   try {
@@ -32,6 +33,16 @@ export const getVideoById = async (req, res) => {
     // Increase views automatically
     video.views += 1;
     await video.save();
+
+    // Track learning activity
+    if (req.user) {
+      await Activity.create({
+        userId: req.user.id,
+        videoId: video._id,
+        category: video.category
+      });
+    }
+
 
     res.status(200).json(video);
 

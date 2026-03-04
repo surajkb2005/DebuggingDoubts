@@ -2,6 +2,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import axios from "../services/axiosInstance";
+const { data } = await axios.get("/dashboard");
 
 export default function Dashboard() {
 
@@ -10,12 +11,17 @@ export default function Dashboard() {
         likes: 0,
         comments: 0
     });
+    const [categories, setCategories] = useState([]);
 
     useEffect(() => {
 
         const fetchStats = async () => {
-            const { data } = await axios.get("/users/dashboard");
-            setStats(data);
+            const { data } = await axios.get("/dashboard");
+            setStats({
+                watched: data.watched
+            });
+
+            setCategories(data.categoryStats);
         };
 
         fetchStats();
@@ -48,6 +54,39 @@ export default function Dashboard() {
                     <div className="bg-white p-6 rounded-xl shadow">
                         <h2 className="text-gray-500 text-sm">Comments Made</h2>
                         <p className="text-3xl font-bold">{stats.comments}</p>
+                    </div>
+
+                </div>
+                <div className="mt-12">
+
+                    <h2 className="text-xl font-semibold mb-6">
+                        Topic Progress
+                    </h2>
+
+                    <div className="space-y-4">
+
+                        {categories.map((cat) => (
+
+                            <div key={cat._id}>
+
+                                <div className="flex justify-between mb-1 text-sm">
+                                    <span>{cat._id}</span>
+                                    <span>{cat.count} videos</span>
+                                </div>
+
+                                <div className="w-full bg-gray-200 rounded-full h-3">
+
+                                    <div
+                                        className="bg-blue-600 h-3 rounded-full"
+                                        style={{ width: `${cat.count * 10}%` }}
+                                    />
+
+                                </div>
+
+                            </div>
+
+                        ))}
+
                     </div>
 
                 </div>

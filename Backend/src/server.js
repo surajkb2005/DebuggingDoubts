@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import videoRoutes from "./routes/videoRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config({ path: "../.env" });
 
@@ -15,6 +16,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/videos", videoRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Test Route
 app.get("/", (req, res) => {

@@ -8,6 +8,6 @@ router.get("/", getAllVideos);
 router.post("/", createVideo);
 router.put("/:id/like", likeVideo);
 router.post("/:id/comment", protect, addComment);
-router.get("/:id", getVideoById);
+router.get("/:id", protect, getVideoById);
 
 export default router;
