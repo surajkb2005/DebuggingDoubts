@@ -41,6 +41,13 @@ const Navbar = () => {
             )}
           </NavLink>
 
+          <NavLink
+            to="/dashboard"
+            className="text-gray-300 hover:text-blue-400 transition"
+          >
+            Dashboard
+          </NavLink>  
+
           {user ? (
             <>
               <span className="text-gray-400">
