@@ -1,8 +1,8 @@
 //Frontend/src/pages/Dashboard.jsx
 import React from "react";
 import { useEffect, useState } from "react";
+import ProgressChart from "../components/ProgressChart";
 import axios from "../services/axiosInstance";
-const { data } = await axios.get("/dashboard");
 
 export default function Dashboard() {
 
@@ -12,6 +12,7 @@ export default function Dashboard() {
         comments: 0
     });
     const [categories, setCategories] = useState([]);
+    const [progress, setProgress] = useState([]);
 
     useEffect(() => {
 
@@ -22,6 +23,7 @@ export default function Dashboard() {
             });
 
             setCategories(data.categoryStats);
+            setProgress(data.dailyProgress);
         };
 
         fetchStats();
@@ -74,6 +76,20 @@ export default function Dashboard() {
 
                 </div>
 
+                <div className="mb-12">
+
+                    <ProgressChart
+                        dataPoints={
+                            progress.length
+                                ? progress.map(p => ({
+                                    date: p._id,
+                                    count: p.count
+                                }))
+                                : [{ date: "Start", count: 0 }]
+                        }
+                    />
+
+                </div>
 
                 {/* Topic Progress */}
                 <div className="bg-white p-8 rounded-xl shadow mb-12">
