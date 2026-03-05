@@ -38,11 +38,44 @@ export const getDashboardStats = async (req, res) => {
             { $sort: { "_id": 1 } }
         ]);
 
+        const days = await Activity.aggregate([
+            { $match: { userId } },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: "%Y-%m-%d",
+                            date: "$watchedAt"
+                        }
+                    }
+                }
+            },
+            { $sort: { _id: -1 } }
+        ]);
+
+        let streak = 0;
+        let prevDate = new Date();
+
+        for (let day of days) {
+
+            const d = new Date(day._id);
+            const diff = Math.floor((prevDate - d) / (1000 * 60 * 60 * 24));
+
+            if (diff <= 1) {
+                streak++;
+                prevDate = d;
+            } else {
+                break;
+            }
+
+        }
+
         res.json({
             watched,
             categoryStats,
             recentActivity,
-            dailyProgress
+            dailyProgress,
+            streak
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
