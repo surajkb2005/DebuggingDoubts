@@ -8,6 +8,8 @@ import Login from "./Auth/Login";
 import Register from "./Auth/Register";
 import ProtectedRoute from "./Auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
+import AdminRoute from "./components/AdminRoute";
 
 function App() {
   return (
@@ -22,7 +24,11 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Videos />} />
-
+          <Route path="/admin" element={
+            <AdminRoute>
+              <Admin />
+            </AdminRoute>
+          } />
           <Route
             path="/video/:id"
             element={

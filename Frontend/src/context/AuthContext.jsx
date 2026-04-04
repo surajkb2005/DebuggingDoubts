@@ -19,12 +19,18 @@ export const AuthProvider = ({ children }) => {
         const res = await axios.post("/auth/login", data);
         localStorage.setItem("user", JSON.stringify(res.data));
         setUser(res.data);
+        return res.data;
     };
 
     const register = async (data) => {
-        const res = await axios.post("/auth/register", data);
-        localStorage.setItem("user", JSON.stringify(res.data));
-        setUser(res.data);
+        try {
+            const res = await axios.post("/auth/register", data);
+            localStorage.setItem("user", JSON.stringify(res.data));
+            setUser(res.data);
+        } catch (err) {
+            console.error(err.response?.data?.message);
+            throw err;
+        }
     };
 
     const logout = () => {

@@ -18,8 +18,13 @@ const Login = () => {
         setError("");
 
         try {
-            await login(form);
-            navigate("/");
+            const res = await login(form);
+
+            if (res.role === "admin") {
+                navigate("/admin");
+            } else {
+                navigate("/dashboard");
+            }
         } catch (err) {
             setError(
                 err.response?.data?.message || "Login failed"

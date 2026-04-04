@@ -40,20 +40,32 @@ const Navbar = () => {
               </>
             )}
           </NavLink>
-
-          <NavLink
-            to="/dashboard"
-            className="text-gray-300 hover:text-blue-400 transition"
-          >
-            Dashboard
-          </NavLink>  
-
           {user ? (
             <>
+              {/* Dashboard */}
+              <NavLink
+                to="/dashboard"
+                className="text-gray-300 hover:text-blue-400 transition"
+              >
+                Dashboard
+              </NavLink>
+
+              {/* 🔥 ADMIN LINK (FIXED) */}
+              {user.role === "admin" && (
+                <NavLink
+                  to="/admin"
+                  className="px-3 py-1 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-105 transition"
+                >
+                  Admin Panel 🚀
+                </NavLink>
+              )}
+
+              {/* User Info */}
               <span className="text-gray-400">
                 Welcome, <span className="text-white">{user.name}</span>
               </span>
 
+              {/* Logout */}
               <button
                 onClick={logout}
                 className="bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-lg transition active:scale-95"
