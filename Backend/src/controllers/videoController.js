@@ -13,7 +13,7 @@ export const getAllVideos = async (req, res) => {
 
 // CREATE new video
 export const createVideo = async (req, res) => {
-  try {
+  try { 
     const newVideo = new Video(req.body);
     const savedVideo = await newVideo.save();
     res.status(201).json(savedVideo);

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ProgressChart from "../components/ProgressChart";
 import axios from "../services/axiosInstance";
 import { useAuth } from "../context/AuthContext";
+import RecommendedSection from "../components/RecommendedSection";
 
 export default function Dashboard() {
 
@@ -181,7 +182,7 @@ export default function Dashboard() {
                     ))} */}
 
                 </div>
-
+                <RecommendedSection />
             </div>
 
         </div>
