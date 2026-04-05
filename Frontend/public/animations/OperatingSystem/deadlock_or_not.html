@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Deadlock Simulation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Dashboard to show numbers changing */
+        .dashboard {
+            display: flex;
+            gap: 20px;
+            background: #fff;
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border-bottom: 3px solid #007bff;
+        }
+        .res-counter {
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+            min-width: 60px;
+            text-align: center;
+        }
+        .res-counter span {
+            color: #007bff;
+            font-size: 22px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 500px;
+            height: 450px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+        }
+
+        /* Nodes */
+        .node {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .process {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #fff;
+            border: 3px solid #17a2b8;
+            color: #0c5460;
+            z-index: 5;
+        }
+        .process.executing {
+            box-shadow: 0 0 15px #17a2b8;
+            background-color: #e0f7fa;
+            transform: scale(1.1);
+        }
+        .process.finished {
+            background-color: #28a745;
+            border-color: #1e7e34;
+            color: white;
+            transform: scale(1);
+            box-shadow: none;
+        }
+
+        .resource {
+            width: 70px;
+            height: 80px;
+            background-color: #e9ecef;
+            border: 2px solid #495057;
+            flex-direction: column;
+            color: #333;
+            z-index: 4;
+        }
+
+        /* The small dots inside resources */
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #555;
+            border-radius: 50%;
+            margin: 3px;
+        }
+
+        /* Animation Token (The moving dot) */
+        .anim-token {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #ffc107; /* Yellow/Orange */
+            border: 1px solid #d39e00;
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            transition: top 1s ease-in-out, left 1s ease-in-out;
+        }
+
+        /* SVG Lines */
+        svg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+        }
+        .arrow {
+            stroke: #555; stroke-width: 2; fill: none;
+            transition: stroke 0.5s, opacity 0.5s;
+        }
+        .arrow.faded {
+            stroke: #ddd; stroke-dasharray: 4; opacity: 0.3;
+        }
+        marker path { fill: #555; transition: fill 0.5s; }
+        .arrow.faded + marker path { fill: #ddd; }
+
+        /* Log Panel */
+        .status-panel {
+            width: 300px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            height: 450px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .status-item {
+            margin-bottom: 8px; padding: 6px;
+            border-left: 3px solid #ccc;
+            font-size: 13px; background: #fafafa;
+        }
+        .status-item.success { border-left-color: #28a745; background: #e8f5e9; }
+        .status-item.info { border-left-color: #17a2b8; background: #e0f7fa; }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            background: #28a745; color: white;
+            border: none; border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover { background: #218838; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .back-home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .back-home-btn:hover {
+            transform: translateX(-3px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        }
+
+        .back-home-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- <button class="back-home-btn" onclick="goHome()">
+        ⬅ Back to Home
+    </button> -->
+
+    <h2>Resource Deallocation Simulation</h2>
+
+    <div class="dashboard">
+        <div class="res-counter">R1: <span id="val-R1">0</span></div>
+        <div class="res-counter">R2: <span id="val-R2">0</span></div>
+        <div class="res-counter">R3: <span id="val-R3">0</span></div>
+        <div class="res-counter">R4: <span id="val-R4">3</span></div>
+    </div>
+
+    <div class="main-container">
+        <div class="canvas-wrapper" id="canvas">
+            <svg id="svg-layer">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
+                        <path d="M0,0 L10,3.5 L0,7" />
+                    </marker>
+                    <marker id="arrowhead-res" markerWidth="10" markerHeight="7" refX="35" refY="3.5" orient="auto">
+                        <path d="M0,0 L10,3.5 L0,7" />
+                    </marker>
+                </defs>
+            </svg>
+            </div>
+
+        <div class="status-panel" id="log-container">
+            <div class="status-item">System Ready. Click button to simulate.</div>
+        </div>
+    </div>
+
+    <button onclick="startSimulation()" id="btn-start">Start Simulation</button>
+
+    <script>
+        // --- 1. CONFIGURATION (Same Logic) ---
+        const nodes = {
+            R1: { type: 'res', x: 150, y: 50, instances: 1 },
+            R3: { type: 'res', x: 350, y: 50, instances: 1 },
+            R2: { type: 'res', x: 150, y: 350, instances: 2 },
+            R4: { type: 'res', x: 350, y: 350, instances: 3 },
+            P1: { type: 'proc', x: 80,  y: 200 },
+            P2: { type: 'proc', x: 250, y: 200 },
+            P3: { type: 'proc', x: 420, y: 200 }
+        };
+
+        const edges = [
+            { from: 'P1', to: 'R1' }, // Request
+            { from: 'R1', to: 'P2' }, // Allocation
+            { from: 'P2', to: 'R3' }, // Request
+            { from: 'R3', to: 'P3' }, // Allocation
+            { from: 'R2', to: 'P1' }, // Allocation
+            { from: 'R2', to: 'P2' }  // Allocation
+        ];
+
+        // Logic State
+        let work = { R1: 0, R2: 0, R3: 0, R4: 3 }; 
+        let allocation = {
+            P1: { R1: 0, R2: 1, R3: 0, R4: 0 },
+            P2: { R1: 1, R2: 1, R3: 0, R4: 0 },
+            P3: { R1: 0, R2: 0, R3: 1, R4: 0 }
+        };
+        let request = {
+            P1: { R1: 1, R2: 0, R3: 0, R4: 0 },
+            P2: { R1: 0, R2: 0, R3: 1, R4: 0 },
+            P3: { R1: 0, R2: 0, R3: 0, R4: 0 }
+        };
+
+        const canvas = document.getElementById('canvas');
+        const svgLayer = document.getElementById('svg-layer');
+
+        function goHome() {
+            window.location.href = "../../index.html"; // change if needed
+            // OR use: window.history.back();
+        }
+
+        // --- 2. SETUP ---
+        function init() {
+            // Draw Nodes
+            Object.keys(nodes).forEach(key => {
+                const n = nodes[key];
+                const el = document.createElement('div');
+                el.className = n.type === 'res' ? 'node resource' : 'node process';
+                el.id = key;
+                // Center positioning
+                const w = n.type === 'res' ? 70 : 60;
+                const h = n.type === 'res' ? 80 : 60;
+                el.style.left = (n.x - w/2) + 'px';
+                el.style.top = (n.y - h/2) + 'px';
+
+                if(n.type === 'res'){
+                    el.innerHTML = `<span>${key}</span>`;
+                    const dC = document.createElement('div');
+                    for(let i=0; i<n.instances; i++) dC.appendChild(createDot());
+                    el.appendChild(dC);
+                } else {
+                    el.textContent = key;
+                }
+                canvas.appendChild(el);
+            });
+
+            // Draw Edges
+            edges.forEach(e => {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                const n1 = nodes[e.from];
+                const n2 = nodes[e.to];
+                line.setAttribute('x1', n1.x);
+                line.setAttribute('y1', n1.y);
+                line.setAttribute('x2', n2.x);
+                line.setAttribute('y2', n2.y);
+                line.setAttribute('class', 'arrow');
+                line.setAttribute('id', `edge-${e.from}-${e.to}`);
+                line.setAttribute('marker-end', nodes[e.to].type==='res' ? 'url(#arrowhead-res)' : 'url(#arrowhead)');
+                svgLayer.appendChild(line);
+            });
+            updateDashboard();
+        }
+
+        function createDot() {
+            const d = document.createElement('div'); d.className='dot'; return d;
+        }
+
+        function addLog(msg, type='normal') {
+            const c = document.getElementById('log-container');
+            const d = document.createElement('div');
+            d.className = 'status-item ' + type;
+            d.innerText = msg;
+            c.appendChild(d);
+            c.scrollTop = c.scrollHeight;
+        }
+
+        function updateDashboard() {
+            for(let r in work) {
+                document.getElementById(`val-${r}`).innerText = work[r];
+            }
+        }
+
+        // --- 3. ANIMATION HELPERS ---
+
+        function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // Core visual deallocation function
+        async function animateDeallocation(procId, allocatedResources) {
+            const pNode = nodes[procId];
+            
+            // Loop through resources held by this process
+            const promises = [];
+
+            for (let resId in allocatedResources) {
+                const count = allocatedResources[resId];
+                if(count > 0) {
+                    const rNode = nodes[resId];
+                    // Create 'count' number of tokens moving from P -> R
+                    for(let i=0; i<count; i++) {
+                        // Create a floating token
+                        const token = document.createElement('div');
+                        token.className = 'anim-token';
+                        // Start at Process Center
+                        token.style.left = (pNode.x - 6) + 'px';
+                        token.style.top = (pNode.y - 6) + 'px';
+                        canvas.appendChild(token);
+
+                        // Force reflow
+                        token.offsetWidth;
+
+                        // Animate to Resource Center
+                        // Slight delay for multiple tokens so they don't overlap perfectly
+                        await wait(100); 
+                        token.style.left = (rNode.x - 6) + 'px';
+                        token.style.top = (rNode.y - 6) + 'px';
+
+                        // When animation ends, remove token and update dashboard logic
+                        const p = new Promise(resolve => {
+                            setTimeout(() => {
+                                token.remove();
+                                resolve();
+                            }, 1000); // match css transition time
+                        });
+                        promises.push(p);
+                    }
+                }
+            }
+            return Promise.all(promises);
+        }
+
+        // --- 4. SIMULATION LOGIC ---
+        async function startSimulation() {
+            const btn = document.getElementById('btn-start');
+            btn.disabled = true;
+            btn.innerText = "Simulating...";
+
+            addLog("Starting Banker's Algorithm check...", "info");
+            
+            let finish = { P1: false, P2: false, P3: false };
+            let changed = true;
+            let safeSequence = [];
+
+            while(changed) {
+                changed = false;
+                
+                for(let p of ['P1', 'P2', 'P3']) { // Check strictly in P1, P2, P3 order per iteration
+                    if(!finish[p]) {
+                        
+                        // Check logic: Need <= Available
+                        let canExec = true;
+                        if(request[p].R1 > work.R1) canExec = false;
+                        if(request[p].R2 > work.R2) canExec = false;
+                        if(request[p].R3 > work.R3) canExec = false;
+                        if(request[p].R4 > work.R4) canExec = false;
+
+                        // Highlight Process being checked
+                        const pEl = document.getElementById(p);
+                        pEl.classList.add('executing');
+                        await wait(600);
+
+                        if(canExec) {
+                            addLog(`${p} can be satisfied. Executing...`, "info");
+                            await wait(800);
+
+                            // VISUALIZE DEALLOCATION
+                            addLog(`${p} is releasing resources: ` + JSON.stringify(allocation[p]).replace(/"/g,'').replace(/{|}/g,''));
+                            
+                            // 1. Run animation
+                            await animateDeallocation(p, allocation[p]);
+
+                            // 2. Update Logic State
+                            work.R1 += allocation[p].R1;
+                            work.R2 += allocation[p].R2;
+                            work.R3 += allocation[p].R3;
+                            work.R4 += allocation[p].R4;
+                            finish[p] = true;
+                            safeSequence.push(p);
+
+                            // 3. Update Visuals (Dashboard & Graph)
+                            updateDashboard();
+                            pEl.classList.remove('executing');
+                            pEl.classList.add('finished'); // Turns Green
+
+                            // Grey out connected lines
+                            edges.forEach(e => {
+                                if(e.from === p || e.to === p) {
+                                    document.getElementById(`edge-${e.from}-${e.to}`).classList.add('faded');
+                                }
+                            });
+
+                            addLog(`${p} Finished. Resources reclaimed.`, "success");
+                            changed = true;
+                            await wait(500);
+                        } else {
+                            pEl.classList.remove('executing'); // Not selected
+                            // addLog(`${p} waits (Resources not available).`);
+                        }
+                    }
+                }
+            }
+
+            // Conclusion
+            if(finish.P1 && finish.P2 && finish.P3) {
+                addLog("SAFE SEQUENCE: " + safeSequence.join(" -> "), "success");
+                addLog("NO DEADLOCK.", "success");
+                btn.innerText = "Finished (Safe)";
+            } else {
+                addLog("DEADLOCK DETECTED.", "error");
+                btn.innerText = "Finished (Deadlock)";
+                btn.style.backgroundColor = "#dc3545";
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

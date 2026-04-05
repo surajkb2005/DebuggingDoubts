@@ -1,0 +1,282 @@
+/* --- 1. CSS Variables & Aesthetic Themes --- */
+:root {
+    /* Dark Mode (Default) */
+    --bg-color: #0f111a;
+    --card-bg: #1e212e;
+    --text-main: #ffffff;
+    --text-secondary: #94a3b8;
+    --accent-color: #7c3aed;
+    --border-color: rgba(255, 255, 255, 0.08);
+    
+    /* INITIAL SHADOW: Visible immediately */
+    --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 
+                    0 10px 10px -5px rgba(0, 0, 0, 0.4);
+    
+    /* HOVER SHADOW: Glow effect */
+    --hover-shadow: 0 20px 40px -10px rgba(124, 58, 237, 0.4), 
+                    0 10px 15px -5px rgba(124, 58, 237, 0.2);
+}
+
+[data-theme="light"] {
+    /* Light Mode */
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #0f172a;
+    --text-secondary: #64748b;
+    --accent-color: #6366f1;
+    --border-color: rgba(0, 0, 0, 0.05);
+    
+    --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 
+                    0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    --hover-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.25);
+}
+
+/* --- 2. General Reset --- */
+.animations-page {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  min-height: 100vh;
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+/* * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 4rem 2rem;
+} */
+
+/* --- 3. Theme Toggle --- */
+.animations-page .theme-switch-wrapper {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    z-index: 1000;
+}
+
+.animations-page .theme-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 12px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+
+/* --- 4. Header --- */
+.animations-page header {
+    text-align: center;
+    margin-bottom: 5rem;
+    max-width: 800px;
+}
+
+.animations-page h1 {
+    font-size: 4rem;
+    letter-spacing: -1px;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--text-main) 30%, var(--accent-color));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.animations-page h3 {
+    font-size: 2.5rem;
+    letter-spacing: -1px;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--text-main) 30%, var(--accent-color));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.animations-page .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.animations-page .youtube-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 28px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+    transition: all 0.3s ease;
+}
+
+.animations-page .youtube-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
+    background: #dc2626;
+}
+
+.animations-page .youtube-btn svg { width: 20px; fill: white; }
+
+/* --- 5. Grid Layout --- */
+.animations-page .gallery-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 3rem;
+    width: 100%;
+    max-width: 1200px;
+}
+
+/* --- 6. Aesthetic Cards with Initial Shading --- */
+.animations-page .card {
+    background-color: var(--card-bg);
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    
+    /* APPLYING INITIAL SHADOW HERE */
+    box-shadow: var(--card-shadow); 
+    
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.animations-page .card:hover {
+    transform: translateY(-12px);
+    box-shadow: var(--hover-shadow);
+    border-color: var(--accent-color);
+}
+
+.animations-page .thumbnail-box {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+    position: relative;
+}
+
+.animations-page .thumbnail-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s ease;
+}
+
+.animations-page .card:hover .thumbnail-box img {
+    transform: scale(1.1);
+}
+
+.animations-page .card-content {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.animations-page .card-title {
+    font-size: 1.6rem;
+    margin-bottom: 0.8rem;
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+.animations-page .card-desc {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+}
+
+/* --- 7. Interactive Buttons --- */
+.animations-page .card-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.animations-page .view-btn {
+    text-decoration: none;
+    font-size: 1rem;
+    color: var(--accent-color);
+    font-weight: 700;
+    position: relative;
+}
+
+.animations-page .view-btn::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -4px;
+    left: 0;
+    background-color: var(--accent-color);
+    transition: width 0.3s ease;
+}
+
+.animations-page .view-btn:hover::after { width: 100%; }
+
+.animations-page .video-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: #ef4444;
+    padding: 10px 18px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+    transition: all 0.3s ease;
+}
+
+.animations-page .video-link-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
+}
+
+.animations-page .video-link-btn svg { width: 18px; fill: white; }
+
+.animations-page .main-footer {
+    width: 100%;
+    padding: 40px 20px;
+    margin-top: 5rem;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+}
+
+.animations-page .main-footer p {
+    color: var(--text-main);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.animations-page .footer-subtext {
+    color: var(--text-secondary) !important;
+    font-size: 0.85rem !important;
+    margin-top: 10px;
+}

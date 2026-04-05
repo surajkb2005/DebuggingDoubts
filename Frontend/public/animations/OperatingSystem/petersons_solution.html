@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peterson's Solution (Pro Visuals)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-grad: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --p0-primary: #3b82f6; /* Blue */
+            --p0-light: #eff6ff;
+            --p1-primary: #f97316; /* Orange */
+            --p1-light: #fff7ed;
+            --code-bg: #1e293b;
+            --text-main: #334155;
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-grad);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            color: var(--text-main);
+        }
+
+        h2 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #1e293b, #475569);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin-bottom: 40px;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* --- SHARED MEMORY (Control Panel Style) --- */
+        .memory-panel {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 40px;
+            display: flex;
+            gap: 50px;
+            align-items: center;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 40px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .memory-panel::before {
+            content: "SHARED MEMORY";
+            position: absolute;
+            top: 5px; left: 50%; transform: translateX(-50%);
+            font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #94a3b8;
+        }
+
+        .mem-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mem-label {
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .led-indicator {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 800;
+            font-size: 14px;
+            color: #94a3b8;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+        }
+
+        .led-indicator.true {
+            background: #22c55e;
+            color: white;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.6), inset 0 -5px 10px rgba(0,0,0,0.1);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .turn-display {
+            font-family: 'Fira Code', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            color: #334155;
+            background: #f1f5f9;
+            padding: 5px 25px;
+            border-radius: 8px;
+            border: 2px solid #cbd5e1;
+            transition: all 0.3s;
+        }
+        .turn-display.highlight {
+            border-color: #6366f1;
+            color: #6366f1;
+            transform: scale(1.1);
+        }
+
+        /* --- MAIN SIMULATION GRID --- */
+        .simulation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Process Cards */
+        .process-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .process-card:hover { transform: translateY(-5px); }
+
+        /* Headers */
+        .card-header {
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .p0-header { background: linear-gradient(to right, #eff6ff, #fff); }
+        .p1-header { background: linear-gradient(to right, #fff7ed, #fff); }
+
+        .proc-title {
+            font-weight: 800;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-p0 { background: #dbeafe; color: var(--p0-primary); }
+        .badge-p1 { background: #ffedd5; color: var(--p1-primary); }
+
+        /* Code Block Area */
+        .code-container {
+            background: var(--code-bg);
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.8;
+            flex-grow: 1; /* Fills height */
+        }
+        
+        .code-line {
+            display: block;
+            padding: 2px 10px;
+            border-radius: 4px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        /* Syntax Highlighting */
+        .kwd { color: #c678dd; } /* keywords like while */
+        .var { color: #e5c07b; } /* variables */
+        .bool { color: #d19a66; } /* boolean values */
+        .comment { color: #5c6370; font-style: italic; }
+
+        /* Active Line Styling */
+        .code-line.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #61afef;
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-weight: 600;
+        }
+        .p1-active { border-left-color: #e06c75 !important; }
+
+        /* Logic Feedback */
+        .logic-bar {
+            padding: 15px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+            color: #475569;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: 500;
+        }
+        .highlight-txt { color: #0f172a; font-weight: 700; background: #e2e8f0; padding: 0 4px; border-radius: 4px; }
+
+        /* Controls */
+        .control-area {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            background: white;
+        }
+        .btn {
+            border: none;
+            padding: 12px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-family: 'Inter', sans-serif;
+        }
+        .btn:active { transform: scale(0.95); }
+        
+        .btn-p0 { background: var(--p0-primary); color: white; }
+        .btn-p0:hover { background: #2563eb; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
+        
+        .btn-p1 { background: var(--p1-primary); color: white; }
+        .btn-p1:hover { background: #ea580c; box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.3); }
+
+        /* --- CRITICAL SECTION VISUALIZATION --- */
+        .cs-wrapper {
+            margin-top: 40px;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+        }
+        .cs-zone {
+            height: 120px;
+            background: Repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #ffffff 10px, #ffffff 20px);
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .cs-title {
+            position: absolute;
+            top: -14px;
+            left: 50%; transform: translateX(-50%);
+            background: var(--bg-grad); /* Match body bg to hide line */
+            padding: 0 15px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: 1px;
+        }
+
+        .cs-token {
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: white;
+            display: none; /* Hidden by default */
+            animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            z-index: 10;
+        }
+        .token-p0 { background: var(--p0-primary); }
+        .token-p1 { background: var(--p1-primary); }
+
+        .empty-msg {
+            color: #cbd5e1;
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        .reset-btn {
+            margin-top: 40px;
+            background: transparent;
+            color: #64748b;
+            border: 2px solid #cbd5e1;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+        .reset-btn:hover { background: #f1f5f9; color: #334155; border-color: #94a3b8; }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Mobile adjustment */
+        @media (max-width: 768px) {
+            .simulation-grid { grid-template-columns: 1fr; }
+            .memory-panel { gap: 20px; padding: 20px; flex-wrap: wrap; justify-content: center;}
+        }
+
+    </style>
+</head>
+<body>
+
+    <h2>Peterson's Solution</h2>
+    <p class="subtitle">A classic software-based solution to the Critical Section Problem.<br>Control the execution flow to see mutual exclusion in action.</p>
+
+    <div class="memory-panel">
+        <div class="mem-item">
+            <span class="mem-label">flag[i]</span>
+            <div id="led-f0" class="led-indicator">FALSE</div>
+        </div>
+        
+        <div class="mem-item">
+            <span class="mem-label">flag[j]</span>
+            <div id="led-f1" class="led-indicator">FALSE</div>
+        </div>
+
+        <div style="width: 2px; height: 40px; background: #e2e8f0; margin: 0 10px;"></div>
+
+        <div class="mem-item">
+            <span class="mem-label">turn</span>
+            <div id="disp-turn" class="turn-display">0</div>
+            Here i=0 and j=1
+        </div>
+    </div>
+
+    <div class="simulation-grid">
+        
+        <div class="process-card">
+            <div class="card-header p0-header">
+                <div class="proc-title">
+                    <span style="color: var(--p0-primary)">Process i</span>
+                </div>
+                <span id="badge-p0" class="badge badge-p0">REMAINDER</span>
+            </div>
+            
+            <div class="code-container">
+                <span id="p0-l1" class="code-line">1. <span class="var">flag</span>[i] = <span class="bool">true</span>;</span>
+                <span id="p0-l2" class="code-line">2. <span class="var">turn</span> = j;</span>
+                <span id="p0-l3" class="code-line">3. <span class="kwd">while</span> (<span class="var">flag</span>[j] && <span class="var">turn</span>==j);</span>
+                <span id="p0-l4" class="code-line" style="color:#4ade80; font-weight:bold;">4. // Critical Section</span>
+                <span id="p0-l5" class="code-line">5. <span class="var">flag</span>[i] = <span class="bool">false</span>;</span>
+                <span id="p0-l6" class="code-line comment">6. // Remainder Section</span>
+            </div>
+
+            <div id="log-p0" class="logic-bar">Ready to start execution.</div>
+
+            <div class="control-area">
+                <button class="btn btn-p0" onclick="step(0)">Step Pi</button>
+            </div>
+        </div>
+
+        <div class="process-card">
+            <div class="card-header p1-header">
+                <div class="proc-title">
+                    <span style="color: var(--p1-primary)">Process j</span>
+                </div>
+                <span id="badge-p1" class="badge badge-p1">REMAINDER</span>
+            </div>
+            
+            <div class="code-container">
+                <span id="p1-l1" class="code-line">1. <span class="var">flag</span>[j] = <span class="bool">true</span>;</span>
+                <span id="p1-l2" class="code-line">2. <span class="var">turn</span> = i;</span>
+                <span id="p1-l3" class="code-line">3. <span class="kwd">while</span> (<span class="var">flag</span>[i] && <span class="var">turn</span>==i);</span>
+                <span id="p1-l4" class="code-line" style="color:#4ade80; font-weight:bold;">4. // Critical Section</span>
+                <span id="p1-l5" class="code-line">5. <span class="var">flag</span>[j] = <span class="bool">false</span>;</span>
+                <span id="p1-l6" class="code-line comment">6. // Remainder Section</span>
+            </div>
+
+            <div id="log-p1" class="logic-bar">Ready to start execution.</div>
+
+            <div class="control-area">
+                <button class="btn btn-p1" onclick="step(1)">Step Pj</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="cs-wrapper">
+        <div class="cs-zone">
+            <span class="cs-title">CRITICAL SECTION ACCESS</span>
+            <div id="token-p0" class="cs-token token-p0">PROCESS i</div>
+            <div id="token-p1" class="cs-token token-p1">PROCESS j</div>
+            <div id="cs-placeholder" class="empty-msg">UNOCCUPIED</div>
+        </div>
+    </div>
+
+    <button class="btn reset-btn" onclick="resetSim()">Reset Simulation</button>
+
+    <script>
+        // --- LOGIC (Identical to before, hooked to new IDs) ---
+        
+        let flags = [false, false];
+        let turn = 0;
+        let pc = [1, 1]; // Program Counters
+
+        function updateSharedView() {
+            // Update LEDs
+            const f0 = document.getElementById('led-f0');
+            const f1 = document.getElementById('led-f1');
+            const t = document.getElementById('disp-turn');
+
+            updateLed(f0, flags[0]);
+            updateLed(f1, flags[1]);
+
+            if (t.innerText != turn) {
+                t.innerText = turn;
+                t.classList.add('highlight');
+                setTimeout(() => t.classList.remove('highlight'), 300);
+            }
+        }
+
+        function updateLed(el, state) {
+            if(state) {
+                if(!el.classList.contains('true')) {
+                    el.classList.add('true');
+                    el.innerText = "TRUE";
+                }
+            } else {
+                if(el.classList.contains('true')) {
+                    el.classList.remove('true');
+                    el.innerText = "FALSE";
+                }
+            }
+        }
+
+        function highlightLine(pid, lineNum) {
+            // Clear all
+            for(let i=1; i<=6; i++) {
+                const el = document.getElementById(`p${pid}-l${i}`);
+                el.classList.remove('active');
+                if(pid === 1) el.classList.remove('p1-active');
+            }
+            // Set active
+            const activeEl = document.getElementById(`p${pid}-l${lineNum}`);
+            if(activeEl) {
+                activeEl.classList.add('active');
+                if(pid === 1) activeEl.classList.add('p1-active');
+            }
+        }
+
+        function setLogic(pid, html) {
+            document.getElementById(`log-p${pid}`).innerHTML = html;
+        }
+
+        function setBadge(pid, text) {
+            document.getElementById(`badge-p${pid}`).innerText = text;
+        }
+
+        function updateCS() {
+            const t0 = document.getElementById('token-p0');
+            const t1 = document.getElementById('token-p1');
+            const empty = document.getElementById('cs-placeholder');
+
+            // If pc[pid] is 5, it means they are currently "In" CS logic-wise
+            // (Instruction 4 finished execution, sitting at 5 waiting to release)
+            const p0In = (pc[0] === 5);
+            const p1In = (pc[1] === 5);
+
+            t0.style.display = p0In ? 'block' : 'none';
+            t1.style.display = p1In ? 'block' : 'none';
+            empty.style.display = (!p0In && !p1In) ? 'block' : 'none';
+        }
+
+        function step(pid) {
+            const other = 1 - pid;
+            const line = pc[pid];
+
+            highlightLine(pid, line);
+
+            switch(line) {
+                case 1: // flag = true
+                    flags[pid] = true;
+                    setLogic(pid, `I want to enter. Setting <span class="highlight-txt">flag[${pid}] = true</span>`);
+                    setBadge(pid, "Requesting");
+                    pc[pid]++;
+                    break;
+                
+                case 2: // turn = other
+                    turn = other;
+                    setLogic(pid, `Giving priority to P${other}. Setting <span class="highlight-txt">turn = ${other}</span>`);
+                    pc[pid]++;
+                    break;
+
+                case 3: // while check
+                    const busyWait = (flags[other] === true && turn === other);
+                    if (busyWait) {
+                        setLogic(pid, `Wait! <span class="highlight-txt">flag[${other}]</span> is True AND it's <span class="highlight-txt">P${other}'s Turn</span>.`);
+                        setBadge(pid, "Waiting...");
+                        // PC does not increment (Busy Wait)
+                        
+                        // Shake animation on card
+                        const card = document.querySelector(pid === 0 ? '.p0-header' : '.p1-header').parentElement;
+                        card.style.transform = "translateX(5px)";
+                        setTimeout(() => card.style.transform = "translateX(0)", 100);
+                    } else {
+                        let reason = flags[other] === false ? `P${other} is not interested.` : `It is my turn.`;
+                        setLogic(pid, `Condition Met (${reason}). <span style="color:#22c55e; font-weight:bold">ENTERING CS.</span>`);
+                        setBadge(pid, "IN CRITICAL SECTION");
+                        pc[pid]++;
+                    }
+                    break;
+
+                case 4: // Critical Section
+                    setLogic(pid, `Executing Critical Section Code...`);
+                    // This is the "duration" step
+                    pc[pid]++;
+                    break;
+
+                case 5: // flag = false
+                    flags[pid] = false;
+                    setLogic(pid, `Done. Releasing lock. <span class="highlight-txt">flag[${pid}] = false</span>`);
+                    setBadge(pid, "LEAVING");
+                    pc[pid]++;
+                    break;
+
+                case 6: // Remainder
+                    setLogic(pid, `Back to Remainder Section.`);
+                    setBadge(pid, "REMAINDER");
+                    pc[pid] = 1; // Restart
+                    break;
+            }
+
+            updateSharedView();
+            updateCS();
+
+            // Prepare highlight for the *next* instruction user will click
+            let nextLine = pc[pid];
+            // Special handling for visual flow
+            if (line === 3 && pc[pid] === 3) nextLine = 3; // Still waiting
+            
+            // Subtle timeout to move the highlighter
+            setTimeout(() => {
+                highlightLine(pid, nextLine);
+            }, 100);
+        }
+
+        function resetSim() {
+            flags = [false, false];
+            turn = 0;
+            pc = [1, 1];
+            updateSharedView();
+            updateCS();
+            
+            setLogic(0, "Ready to start.");
+            setLogic(1, "Ready to start.");
+            setBadge(0, "REMAINDER");
+            setBadge(1, "REMAINDER");
+            
+            highlightLine(0, 1);
+            highlightLine(1, 1);
+        }
+
+        // Init
+        highlightLine(0, 1);
+        highlightLine(1, 1);
+
+    </script>
+</body>
+</html>

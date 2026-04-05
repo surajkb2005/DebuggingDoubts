@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OS Paging Hardware Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #1a1a1a;
+            --box-bg: #2d2d2d;
+            --accent-cpu: #3498db;  /* Blue */
+            --accent-tlb: #e67e22;  /* Orange */
+            --accent-pt: #9b59b6;   /* Purple */
+            --accent-mem: #2ecc71;  /* Green */
+            --text-color: #ecf0f1;
+            --line-color: #555;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Roboto Mono', monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 { margin-bottom: 10px; border-bottom: 2px solid var(--accent-cpu); padding-bottom: 5px; }
+        
+        /* --- LAYOUT GRID (Mimics Textbook Diagram) --- */
+        .diagram-container {
+            position: relative;
+            display: grid;
+            grid-template-columns: 180px 220px 220px 200px;
+            grid-template-rows: auto auto auto;
+            gap: 40px 20px;
+            margin: 40px 0;
+            padding: 20px;
+            background: #222;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* --- COMPONENTS --- */
+        .box {
+            background: var(--box-bg);
+            border: 2px solid #444;
+            border-radius: 5px;
+            padding: 10px;
+            position: relative;
+            transition: all 0.3s;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .box h3 { margin: 0 0 10px 0; font-size: 0.9rem; text-transform: uppercase; color: #888; text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; }
+
+        /* CPU & Address Box */
+        .cpu-group { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+        .addr-box {
+            display: flex;
+            border: 2px solid #fff;
+            margin-top: 10px;
+            background: #000;
+        }
+        .part { padding: 8px; flex: 1; text-align: center; font-weight: bold; position: relative; }
+        .part-p { border-right: 1px solid #fff; color: var(--accent-cpu); }
+        .part-d { color: var(--accent-mem); }
+        .part label { position: absolute; top: -20px; left: 0; width: 100%; font-size: 0.7rem; color: #aaa; }
+
+        /* TLB */
+        .tlb-group { grid-column: 2; grid-row: 1; }
+        .table-view {
+            max-height: 120px; overflow-y: auto; font-size: 0.8rem;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+        }
+        .table-head { font-weight: bold; color: #aaa; border-bottom: 1px solid #555; margin-bottom: 2px; }
+        .table-row { background: #333; padding: 2px 5px; display: contents; }
+        .table-row span { padding: 2px; text-align: center; }
+        
+        /* Page Table */
+        .pt-group { grid-column: 2; grid-row: 2; margin-top: 20px; }
+        
+        /* Physical Address */
+        .phy-addr-group { grid-column: 3; grid-row: 1 / span 2; align-self: center; display: flex; flex-direction: column; align-items: center; }
+        .phy-box {
+            display: flex;
+            border: 2px solid var(--accent-mem);
+            background: #000;
+            width: 100%;
+        }
+        
+        /* Physical Memory */
+        .mem-group { grid-column: 4; grid-row: 1 / span 2; align-self: center; height: 300px; }
+        .mem-grid { display: flex; flex-direction: column; height: 100%; overflow-y: auto; gap: 1px; }
+        .mem-cell { background: #333; padding: 4px; font-size: 0.75rem; display: flex; justify-content: space-between; }
+
+        /* --- ANIMATION CANVAS --- */
+        #anim-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* --- CONTROLS --- */
+        .controls {
+            display: flex; gap: 15px; background: var(--box-bg); padding: 15px; border-radius: 8px; border-top: 3px solid var(--accent-cpu);
+            align-items: center;
+        }
+        button {
+            background: transparent; border: 1px solid var(--accent-cpu); color: var(--accent-cpu);
+            padding: 8px 16px; font-family: inherit; cursor: pointer; transition: 0.2s;
+            font-weight: bold;
+        }
+        button:hover { background: var(--accent-cpu); color: #fff; }
+        button:disabled { border-color: #555; color: #555; cursor: not-allowed; }
+        
+        .status-bar { margin-top: 15px; color: #aaa; font-size: 0.9rem; height: 20px; }
+        .hit-text { color: var(--accent-mem); font-weight: bold; }
+        .miss-text { color: #e74c3c; font-weight: bold; }
+
+        /* Highlights */
+        .active-box { box-shadow: 0 0 15px var(--accent-cpu); border-color: var(--accent-cpu); }
+        .found-row { background-color: var(--accent-mem) !important; color: #000; }
+        .miss-row { background-color: #e74c3c !important; }
+
+        .back-home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .back-home-btn:hover {
+            transform: translateX(-3px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        }
+
+        .back-home-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <!-- <button class="back-home-btn" onclick="goHome()">
+        ⬅ Back to Home
+    </button> -->
+
+    <h1>Paging Hardware Simulation</h1>
+    <div style="font-size: 0.8rem; color: #888;">Based on Silberschatz Operating System Concepts Diagram</div>
+
+    <div class="diagram-container">
+        <canvas id="anim-canvas"></canvas>
+
+        <div class="box cpu-group" id="box-cpu">
+            <h3>CPU</h3>
+            <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px;">Logical Address</div>
+            <div class="addr-box">
+                <div class="part part-p">
+                    <label>p</label>
+                    <span id="val-p">0</span>
+                </div>
+                <div class="part part-d">
+                    <label>d</label>
+                    <span id="val-d">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="box tlb-group" id="box-tlb">
+            <h3>TLB (Cache)</h3>
+            <div class="table-view" id="tlb-view">
+                <div class="table-head">p</div><div class="table-head">f</div>
+                </div>
+        </div>
+
+        <div class="box pt-group" id="box-pt">
+            <h3>Page Table</h3>
+            <div class="table-view" id="pt-view" style="height: 150px;">
+                <div class="table-head">Idx</div><div class="table-head">f</div>
+                </div>
+        </div>
+
+        <div class="box phy-addr-group" id="box-phy">
+            <h3>Physical Address</h3>
+            <div class="phy-box">
+                <div class="part part-p" style="color: var(--accent-mem); border-color: var(--accent-mem);">
+                    <label>f</label>
+                    <span id="val-f">-</span>
+                </div>
+                <div class="part part-d">
+                    <label>d</label>
+                    <span id="val-d-phy">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="box mem-group" id="box-mem">
+            <h3>Physical Memory</h3>
+            <div class="mem-grid" id="mem-view">
+                </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div>
+            <label style="font-size: 0.8rem; color: #aaa;">Page (p):</label>
+            <input type="number" id="in-p" min="0" max="7" value="2" style="width: 40px; background:#333; border:1px solid #555; color:#fff; text-align:center;">
+        </div>
+        <div>
+            <label style="font-size: 0.8rem; color: #aaa;">Offset (d):</label>
+            <input type="number" id="in-d" min="0" max="99" value="15" style="width: 40px; background:#333; border:1px solid #555; color:#fff; text-align:center;">
+        </div>
+        <button onclick="runSimulation()">Generate Address</button>
+        <button onclick="resetSim()" style="border-color: #e74c3c; color: #e74c3c;">Reset</button>
+    </div>
+
+    <div class="status-bar" id="status-text">System Ready.</div>
+
+    <script>
+        /* --- CONFIG --- */
+        const PAGE_COUNT = 8;
+        const FRAME_COUNT = 16;
+        const TLB_SIZE = 4;
+        
+        let pageTable = [];
+        let tlb = [];
+        let isRunning = false;
+
+        const canvas = document.getElementById('anim-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function goHome() {
+            window.location.href = "../../index.html"; // change if needed
+            // OR use: window.history.back();
+        }
+
+        function init() {
+            // Setup Page Table
+            pageTable = [];
+            let usedFrames = new Set();
+            for(let i=0; i<PAGE_COUNT; i++){
+                let f = -1;
+                if(Math.random() > 0.2) { // 80% valid
+                    do { f = Math.floor(Math.random() * FRAME_COUNT); } while(usedFrames.has(f));
+                    usedFrames.add(f);
+                }
+                pageTable.push(f);
+            }
+            tlb = [];
+            renderDOM();
+            resizeCanvas();
+        }
+
+        function renderDOM() {
+            // TLB
+            const tlbEl = document.getElementById('tlb-view');
+            tlbEl.innerHTML = '<div class="table-head">p</div><div class="table-head">f</div>';
+            for(let i=0; i<TLB_SIZE; i++) {
+                let entry = tlb[i];
+                tlbEl.innerHTML += `
+                    <div class="table-row" id="tlb-row-${i}">
+                        <span>${entry ? entry.p : '-'}</span>
+                        <span>${entry ? entry.f : '-'}</span>
+                    </div>`;
+            }
+
+            // Page Table
+            const ptEl = document.getElementById('pt-view');
+            ptEl.innerHTML = '<div class="table-head">Idx</div><div class="table-head">f</div>';
+            pageTable.forEach((f, i) => {
+                ptEl.innerHTML += `
+                    <div class="table-row" id="pt-row-${i}">
+                        <span>${i}</span>
+                        <span>${f === -1 ? 'i' : f}</span>
+                    </div>`;
+            });
+
+            // Memory
+            const memEl = document.getElementById('mem-view');
+            memEl.innerHTML = '';
+            for(let i=0; i<FRAME_COUNT; i++) {
+                memEl.innerHTML += `<div class="mem-cell" id="mem-row-${i}"><span>Fr ${i}</span><span>[Data]</span></div>`;
+            }
+        }
+
+        /* --- VISUALIZATION HELPERS --- */
+        function getRect(id) {
+            const el = document.getElementById(id);
+            const container = document.querySelector('.diagram-container');
+            const r = el.getBoundingClientRect();
+            const c = container.getBoundingClientRect();
+            return {
+                x: r.left - c.left + r.width/2,
+                y: r.top - c.top + r.height/2,
+                w: r.width, h: r.height,
+                left: r.left - c.left, top: r.top - c.top,
+                right: r.right - c.left, bottom: r.bottom - c.top
+            };
+        }
+
+        async function drawPath(p1, p2, color, label="") {
+            return new Promise(resolve => {
+                const start = {x: p1.x, y: p1.y};
+                const end = {x: p2.x, y: p2.y};
+                let progress = 0;
+                
+                function step() {
+                    progress += 0.05;
+                    if(progress > 1) progress = 1;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(start.x, start.y);
+                    ctx.lineTo(start.x + (end.x - start.x)*progress, start.y + (end.y - start.y)*progress);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    if(label && progress > 0.5) {
+                        ctx.fillStyle = "#fff";
+                        ctx.font = "12px monospace";
+                        ctx.fillText(label, (start.x+end.x)/2, (start.y+end.y)/2 - 5);
+                    }
+
+                    if(progress < 1) requestAnimationFrame(step);
+                    else resolve();
+                }
+                step();
+            });
+        }
+
+        function clearCanvas() { ctx.clearRect(0,0, canvas.width, canvas.height); }
+        function setStatus(msg, type="") {
+            const el = document.getElementById('status-text');
+            el.innerHTML = msg;
+            el.className = "status-bar " + type;
+        }
+
+        /* --- SIMULATION LOGIC --- */
+        async function runSimulation() {
+            if(isRunning) return;
+            isRunning = true;
+            clearCanvas();
+            document.querySelectorAll('.found-row, .miss-row, .active-box').forEach(e => e.classList.remove('found-row', 'miss-row', 'active-box'));
+            
+            const p = parseInt(document.getElementById('in-p').value);
+            const d = parseInt(document.getElementById('in-d').value);
+            
+            // 1. Initial State
+            document.getElementById('val-p').innerText = p;
+            document.getElementById('val-d').innerText = d;
+            document.getElementById('val-f').innerText = '?';
+            document.getElementById('val-d-phy').innerText = '?';
+            
+            const cpuBox = getRect('box-cpu');
+            const tlbBox = getRect('box-tlb');
+            const ptBox = getRect('box-pt');
+            const phyBox = getRect('box-phy');
+            const memBox = getRect('box-mem');
+
+            // Draw: d bypasses translation
+            setStatus("Extracting Offset (d)...");
+            await drawPath(
+                {x: cpuBox.right - 40, y: cpuBox.y + 10}, 
+                {x: phyBox.left + 40, y: phyBox.y + 10}, 
+                "#2ecc71", "d"
+            );
+            document.getElementById('val-d-phy').innerText = d;
+
+            // Draw: p goes to TLB
+            setStatus("Checking TLB for Page " + p + "...");
+            await drawPath(
+                {x: cpuBox.right - 40, y: cpuBox.y - 10}, 
+                {x: tlbBox.left, y: tlbBox.y}, 
+                "#3498db", "p"
+            );
+            document.getElementById('box-tlb').classList.add('active-box');
+            
+            await new Promise(r => setTimeout(r, 500));
+
+            // Check TLB
+            let frame = -1;
+            let tlbHit = false;
+            
+            const tlbIdx = tlb.findIndex(e => e.p === p);
+            
+            if(tlbIdx !== -1) {
+                // HIT
+                tlbHit = true;
+                frame = tlb[tlbIdx].f;
+                setStatus("TLB HIT!", "hit-text");
+                document.getElementById(`tlb-row-${tlbIdx}`).classList.add('found-row');
+                
+                await drawPath(
+                    {x: tlbBox.right, y: tlbBox.y}, 
+                    {x: phyBox.left + 20, y: phyBox.y - 10}, 
+                    "#2ecc71", "f"
+                );
+
+            } else {
+                // MISS
+                setStatus("TLB MISS. Checking Page Table...", "miss-text");
+                document.getElementById('box-tlb').classList.remove('active-box');
+                
+                // Path TLB -> PT
+                await drawPath(
+                    {x: tlbBox.x, y: tlbBox.bottom}, 
+                    {x: ptBox.x, y: ptBox.top}, 
+                    "#e74c3c"
+                );
+                document.getElementById('box-pt').classList.add('active-box');
+                
+                // Scroll to row
+                const row = document.getElementById(`pt-row-${p}`);
+                if(row) {
+                    row.scrollIntoView({behavior:'smooth', block:'center'});
+                    row.classList.add('found-row');
+                }
+                
+                await new Promise(r => setTimeout(r, 600));
+                
+                frame = pageTable[p];
+                
+                if(frame === -1) {
+                    setStatus("TRAP: Invalid Page Reference!", "miss-text");
+                    isRunning = false;
+                    return;
+                }
+
+                // Update TLB
+                if(tlb.length >= TLB_SIZE) tlb.shift();
+                tlb.push({p: p, f: frame});
+                renderDOM(); // Re-render to show new TLB
+                document.getElementById(`tlb-row-${tlb.length-1}`).classList.add('found-row');
+
+                // Path PT -> Phy
+                await drawPath(
+                    {x: ptBox.right, y: ptBox.y}, 
+                    {x: phyBox.left + 20, y: phyBox.y - 10}, 
+                    "#9b59b6", "f"
+                );
+            }
+
+            document.getElementById('val-f').innerText = frame;
+            setStatus(`Physical Address Generated: Frame ${frame}, Offset ${d}`, "hit-text");
+            document.getElementById('box-phy').classList.add('active-box');
+
+            await new Promise(r => setTimeout(r, 500));
+
+            // Access Memory
+            await drawPath(
+                {x: phyBox.right, y: phyBox.y},
+                {x: memBox.left, y: memBox.y},
+                "#fff"
+            );
+            
+            const memRow = document.getElementById(`mem-row-${frame}`);
+            if(memRow) {
+                memRow.scrollIntoView({behavior:'smooth', block:'center'});
+                memRow.classList.add('found-row');
+            }
+
+            isRunning = false;
+        }
+
+        function resetSim() {
+            init();
+            clearCanvas();
+            document.getElementById('val-p').innerText = 0;
+            document.getElementById('val-d').innerText = 0;
+            document.getElementById('val-f').innerText = '-';
+            document.getElementById('val-d-phy').innerText = '-';
+            setStatus("System Reset.");
+        }
+
+        function resizeCanvas() {
+            const c = document.querySelector('.diagram-container');
+            canvas.width = c.offsetWidth;
+            canvas.height = c.offsetHeight;
+        }
+        window.onresize = resizeCanvas;
+
+        init();
+
+    </script>
+</body>
+</html>

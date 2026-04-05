@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dining Philosophers – Step by Step</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Segoe UI, sans-serif;
+    background:#020617;
+    color:#e5e7eb;
+}
+h1{
+    text-align:center;
+    color:#38bdf8;
+    margin:10px 0;
+}
+.container{
+    display:grid;
+    grid-template-columns: 1.1fr 1fr;
+    height:90vh;
+}
+
+/* ===== CODE PANEL ===== */
+.code{
+    padding:20px;
+    border-right:3px solid #38bdf8;
+}
+pre{
+    background:#020617;
+    border:1px solid #38bdf8;
+    border-radius:8px;
+    padding:14px;
+    font-size:15px;
+}
+.line{
+    display:block;
+    padding:3px 6px;
+}
+.active{
+    background:#164e63;
+    border-left:4px solid #38bdf8;
+}
+
+/* ===== VISUAL PANEL ===== */
+.visual{
+    padding:20px;
+    text-align:center;
+}
+.table{
+    width:320px;
+    height:320px;
+    border:4px solid #38bdf8;
+    border-radius:50%;
+    margin:20px auto;
+    position:relative;
+}
+.philo{
+    position:absolute;
+    width:90px;
+    font-weight:bold;
+}
+.fork{
+    margin:6px;
+    padding:6px;
+    border:2px solid #38bdf8;
+    border-radius:6px;
+}
+.free{ color:#22c55e; }
+.held{ color:#f97316; }
+
+.controls button{
+    padding:10px 18px;
+    margin:8px;
+    font-weight:bold;
+    border:none;
+    border-radius:6px;
+    background:#38bdf8;
+    cursor:pointer;
+}
+#explain{
+    margin-top:15px;
+    min-height:50px;
+    font-style:italic;
+    color:#cbd5f5;
+}
+</style>
+</head>
+
+<body>
+
+<h1>5.7.3 Dining Philosophers (Step-by-Step)</h1>
+
+<div class="container">
+
+<!-- ================= CODE SIDE ================= -->
+<div class="code">
+<h2>Philosopher Code (Textbook)</h2>
+<pre>
+<span class="line" id="l1">wait(left_fork);</span>
+<span class="line" id="l2">wait(right_fork);</span>
+<span class="line">// EAT</span>
+<span class="line" id="l3">signal(left_fork);</span>
+<span class="line" id="l4">signal(right_fork);</span>
+</pre>
+</div>
+
+<!-- ================= VISUAL SIDE ================= -->
+<div class="visual">
+
+<h3>Fork Semaphores</h3>
+<div id="forks"></div>
+
+<h3>Philosophers (round table)</h3>
+<div class="table">
+<div class="philo" style="top:-10px;left:110px;">P0</div>
+<div class="philo" style="top:70px;right:-20px;">P1</div>
+<div class="philo" style="bottom:20px;right:20px;">P2</div>
+<div class="philo" style="bottom:20px;left:20px;">P3</div>
+<div class="philo" style="top:70px;left:-20px;">P4</div>
+</div>
+
+<div class="controls">
+<button onclick="nextStep()">▶ Next Step</button>
+<button onclick="resetAll()">🔄 Reset</button>
+</div>
+
+<p id="explain"></p>
+
+</div>
+</div>
+
+<script>
+/* ===== TEXTBOOK VARIABLES ===== */
+let forks = [1,1,1,1,1];   // 1 = free, 0 = held
+let philosopher = 0;
+let step = 0;
+
+/* ===== UI ===== */
+function drawForks(){
+    forksDiv.innerHTML="";
+    forks.forEach((f,i)=>{
+        let d=document.createElement("div");
+        d.className="fork "+(f?"free":"held");
+        d.innerText = `Fork F${i}: `+(f?"FREE":"HELD");
+        forksDiv.appendChild(d);
+    });
+}
+const forksDiv = document.getElementById("forks");
+
+function clearHighlight(){
+    document.querySelectorAll(".line")
+        .forEach(l=>l.classList.remove("active"));
+}
+
+/* ===== STEP EXECUTION ===== */
+function nextStep(){
+    clearHighlight();
+    let left = philosopher;
+    let right = (philosopher + 1) % 5;
+
+    if(step === 0){
+        if(forks[left] === 0){
+            explain.innerText = `P${philosopher} blocked: left fork busy`;
+            return;
+        }
+        l1.classList.add("active");
+        forks[left] = 0;
+        explain.innerText = `P${philosopher} executes wait(left_fork F${left})`;
+    }
+    else if(step === 1){
+        if(forks[right] === 0){
+            explain.innerText = `P${philosopher} blocked: right fork busy → HOLD & WAIT`;
+            return;
+        }
+        l2.classList.add("active");
+        forks[right] = 0;
+        explain.innerText = `P${philosopher} executes wait(right_fork F${right})`;
+    }
+    else if(step === 2){
+        explain.innerText = `P${philosopher} is EATING`;
+    }
+    else if(step === 3){
+        l3.classList.add("active");
+        forks[left] = 1;
+        explain.innerText = `P${philosopher} releases left fork`;
+    }
+    else if(step === 4){
+        l4.classList.add("active");
+        forks[right] = 1;
+        explain.innerText = `P${philosopher} releases right fork`;
+        step = -1;
+        philosopher = (philosopher + 1) % 5;
+    }
+
+    step++;
+    drawForks();
+
+    if(forks.every(f => f === 0)){
+        explain.innerText = "⚠ DEADLOCK: all philosophers hold one fork";
+    }
+}
+
+/* ===== RESET ===== */
+function resetAll(){
+    forks = [1,1,1,1,1];
+    philosopher = 0;
+    step = 0;
+    clearHighlight();
+    explain.innerText = "System reset to initial textbook state";
+    drawForks();
+}
+
+drawForks();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Crazy Paging Visualizer</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Fira+Code&display=swap');
+
+:root{
+  --bg:#020617;
+  --panel:#020617;
+  --logic:#3b82f6;
+  --phys:#22c55e;
+  --table:#d946ef;
+  --page:#facc15;
+  --dim:#475569;
+}
+
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#020617,#000);
+  color:#e5e7eb;
+  font-family:Inter,sans-serif;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+h1{margin:15px 0 5px}
+.subtitle{color:#94a3b8;font-size:0.9rem}
+
+.stage{
+  margin-top:20px;
+  width:1100px;
+  height:520px;
+  position:relative;
+  border-radius:18px;
+  background:linear-gradient(180deg,#020617,#020617);
+  box-shadow:0 0 80px rgba(0,0,0,0.9);
+  display:flex;
+  padding:30px;
+  gap:30px;
+}
+
+/* ================= MEMORY BLOCKS ================= */
+
+.mem{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+
+.title{
+  letter-spacing:2px;
+  font-size:0.75rem;
+  color:#94a3b8;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(5,36px);
+  gap:8px;
+}
+
+.block{
+  width:36px;
+  height:36px;
+  border-radius:6px;
+  background:#020617;
+  border:1px solid #1e293b;
+  transition:0.6s cubic-bezier(.34,1.56,.64,1);
+  position:relative;
+}
+
+.logic .block{ box-shadow:0 0 0 0 var(--logic); }
+.phys .block{ box-shadow:0 0 0 0 var(--phys); }
+
+.block.page{
+  background:rgba(59,130,246,0.15);
+  border-color:var(--logic);
+}
+.block.frame{
+  background:rgba(34,197,94,0.15);
+  border-color:var(--phys);
+}
+
+.block.active{
+  transform:scale(1.15);
+  box-shadow:0 0 25px currentColor;
+}
+
+.logic .active{color:var(--logic)}
+.phys .active{color:var(--phys)}
+
+.offset{
+  position:absolute;
+  bottom:-6px;
+  right:-6px;
+  width:10px;
+  height:10px;
+  background:var(--page);
+  border-radius:50%;
+  box-shadow:0 0 12px var(--page);
+}
+
+/* ================= PAGE TABLE LANE ================= */
+
+.lane{
+  width:120px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+
+.map-line{
+  width:4px;
+  height:280px;
+  background:linear-gradient(var(--table),transparent);
+  border-radius:2px;
+  opacity:0;
+  transition:0.5s;
+}
+
+.map-line.show{opacity:1}
+
+.floating{
+  position:absolute;
+  width:36px;
+  height:36px;
+  border-radius:6px;
+  background:rgba(59,130,246,0.25);
+  border:2px solid var(--logic);
+  top:70px;
+  opacity:0;
+  transition:0.8s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 0 30px var(--logic);
+}
+
+.floating.move{
+  opacity:1;
+  top:360px;
+  background:rgba(34,197,94,0.25);
+  border-color:var(--phys);
+  box-shadow:0 0 30px var(--phys);
+}
+
+/* ================= CONTROLS ================= */
+
+.controls{
+  margin:25px;
+  display:flex;
+  gap:12px;
+}
+
+button{
+  padding:10px 22px;
+  border-radius:10px;
+  border:none;
+  background:#020617;
+  color:#fff;
+  font-weight:700;
+  letter-spacing:0.5px;
+  cursor:pointer;
+  border:1px solid #1e293b;
+}
+
+button:hover{
+  background:#020617;
+  box-shadow:0 0 15px #1e293b;
+}
+
+.info{
+  margin-top:10px;
+  color:#facc15;
+  font-family:Fira Code;
+}
+
+.back-home-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+  .back-home-btn:hover {
+  transform: translateX(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  }
+
+  .back-home-btn:active {
+  transform: scale(0.95);
+  }
+</style>
+</head>
+
+<body>
+<!-- <button class="back-home-btn" onclick="goHome()">
+    ⬅ Back to Home
+</button> -->
+
+<h1>Paging — Visual Mind Solver</h1>
+<div class="subtitle">4GB Logical | 64MB Physical | 4KB Page</div>
+
+<div class="stage">
+
+  <!-- LOGICAL MEMORY -->
+  <div class="mem logic">
+    <div class="title">LOGICAL PAGES (2²⁰)</div>
+    <div class="grid" id="logicGrid"></div>
+  </div>
+
+  <!-- PAGE TABLE -->
+  <div class="lane">
+    <div class="title">PAGE TABLE</div>
+    <div class="map-line" id="mapLine"></div>
+    <div class="floating" id="floatBlock">
+      <div class="offset"></div>
+    </div>
+  </div>
+
+  <!-- PHYSICAL MEMORY -->
+  <div class="mem phys">
+    <div class="title">PHYSICAL FRAMES (2¹⁴)</div>
+    <div class="grid" id="physGrid"></div>
+  </div>
+
+</div>
+
+<div class="controls">
+  <button onclick="step1()">1. Pick Page</button>
+  <button onclick="step2()">2. Page Table</button>
+  <button onclick="step3()">3. Map Frame</button>
+  <button onclick="step4()">4. Final Address</button>
+</div>
+
+<div class="info" id="info"></div>
+
+<script>
+const logicGrid = document.getElementById("logicGrid");
+const physGrid  = document.getElementById("physGrid");
+const floatBlk  = document.getElementById("floatBlock");
+const mapLine   = document.getElementById("mapLine");
+const info      = document.getElementById("info");
+
+// create blocks
+for(let i=0;i<25;i++){
+  logicGrid.innerHTML += `<div class="block page"></div>`;
+  physGrid.innerHTML  += `<div class="block frame"></div>`;
+}
+
+const logicBlocks = document.querySelectorAll(".logic .block");
+const physBlocks  = document.querySelectorAll(".phys .block");
+
+function goHome() {
+    window.location.href = "../../index.html"; // change if needed
+    // OR use: window.history.back();
+}
+
+function reset(){
+  logicBlocks.forEach(b=>b.classList.remove("active"));
+  physBlocks.forEach(b=>b.classList.remove("active"));
+  floatBlk.classList.remove("move");
+  floatBlk.style.opacity="0";
+  mapLine.classList.remove("show");
+}
+
+function step1(){
+  reset();
+  logicBlocks[7].classList.add("active");
+  info.innerHTML="CPU selects a PAGE number from logical address (20 bits)";
+}
+
+function step2(){
+  reset();
+  logicBlocks[7].classList.add("active");
+  mapLine.classList.add("show");
+  floatBlk.style.opacity="1";
+  info.innerHTML="Page number indexes the Page Table";
+}
+
+function step3(){
+  reset();
+  logicBlocks[7].classList.add("active");
+  mapLine.classList.add("show");
+  floatBlk.classList.add("move");
+  physBlocks[17].classList.add("active");
+  info.innerHTML="Page is mapped to a free FRAME (14 bits)";
+}
+
+function step4(){
+  reset();
+  physBlocks[17].classList.add("active");
+  info.innerHTML="Physical Address = [ Frame | Offset ] (Offset unchanged)";
+}
+</script>
+
+</body>
+</html>

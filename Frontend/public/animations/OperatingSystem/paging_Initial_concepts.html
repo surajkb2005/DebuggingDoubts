@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Paging Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Fira+Code:wght@500&display=swap');
+
+        :root {
+            /* Palette */
+            --bg-grad-start: #0f172a;
+            --bg-grad-end: #1e293b;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(148, 163, 184, 0.2);
+            
+            /* Brighter, solid colors for "Highlight" effect */
+            --accent-p: #0ea5e9; /* Vivid Blue */
+            --accent-d: #22c55e; /* Vivid Green */
+            --accent-f: #d946ef; /* Vivid Purple */
+            --accent-white: #f8fafc;
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            
+            --highlight-row: rgba(14, 165, 233, 0.2);
+            --highlight-border: #0ea5e9;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-grad-start), var(--bg-grad-end));
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin-bottom: 5px;
+            color: var(--text-main);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 30px; }
+
+        /* --- MAIN LAYOUT --- */
+        .main-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* --- PANELS --- */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            position: relative;
+        }
+
+        /* --- LEFT: HARDWARE DIAGRAM --- */
+        .hardware-section {
+            width: 600px;
+            height: 600px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 40px 60px;
+        }
+
+        .hw-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .hw-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Layout Positions */
+        #cpu-box { grid-column: 1; grid-row: 1; align-self: center; }
+        #phy-addr-box { grid-column: 2; grid-row: 1; align-self: center; }
+        #pt-box { grid-column: 1; grid-row: 2; height: 320px; }
+        #ram-box { grid-column: 2; grid-row: 2; height: 320px; }
+
+        /* Address Splitting (Registers) */
+        .split-addr {
+            display: flex;
+            width: 100%;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0f172a;
+        }
+
+        .split-part {
+            flex: 1;
+            padding: 10px;
+            border-right: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .split-part:last-child { border-right: none; }
+
+        .bit-label { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 4px; }
+        .val-display { font-family: 'Fira Code', monospace; font-size: 1.2rem; font-weight: bold; }
+        .binary-sub { font-family: 'Fira Code', monospace; font-size: 0.75rem; opacity: 0.6; margin-top: 2px; }
+
+        /* Color Coding */
+        .c-p .val-display, .c-p .binary-sub { color: var(--accent-p); }
+        .c-d .val-display, .c-d .binary-sub { color: var(--accent-d); }
+        .c-f .val-display, .c-f .binary-sub { color: var(--accent-f); }
+
+        .bin-info { font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; font-family: 'Fira Code', monospace; }
+
+        /* Scrollable Areas */
+        .scroll-area {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+        }
+        .data-table th {
+            position: sticky; top: 0;
+            background: #1e293b;
+            color: var(--text-main);
+            padding: 8px;
+            font-size: 0.7rem;
+            text-align: left;
+            border-bottom: 1px solid var(--panel-border);
+        }
+        .data-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-muted);
+        }
+        
+        .row-highlight {
+            background: var(--highlight-row);
+            color: white !important;
+            border-left: 3px solid var(--highlight-border);
+        }
+
+        /* --- RIGHT: MODEL SECTION --- */
+        .model-section {
+            width: 400px;
+            height: 600px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .mem-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .col-title {
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--panel-border);
+        }
+
+        .mem-block {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .block-head {
+            background: rgba(255,255,255,0.05);
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            color: var(--text-main);
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        .data-row:last-child { border-bottom: none; }
+
+        .active-log { background: rgba(14, 165, 233, 0.2); color: var(--accent-p) !important; font-weight: bold; }
+        .active-phy { background: rgba(34, 197, 94, 0.2); color: var(--accent-d) !important; font-weight: bold; }
+
+        /* --- CANVAS --- */
+        #anim-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* --- CONTROLS --- */
+        .controls {
+            margin-top: 30px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+
+        select {
+            background: #0f172a;
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+        select:focus { border-color: var(--accent-p); }
+
+        /* Buttons */
+        .btn {
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent-p);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3);
+        }
+        .btn-primary:hover { background: #0284c7; transform: translateY(-1px); }
+        .btn-primary:disabled { background: #475569; cursor: not-allowed; box-shadow: none; transform: none; color: #94a3b8; }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            color: var(--text-muted);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+
+        /* Status */
+        .status-display {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            margin-left: 20px;
+        }
+
+        .dots { display: flex; gap: 6px; margin-bottom: 5px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #334155; transition: 0.3s; }
+        .dot.active { background: var(--accent-p); box-shadow: 0 0 8px var(--accent-p); }
+
+        .status-text {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-d);
+            min-width: 250px;
+            text-align: right;
+        }
+
+        .back-home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .back-home-btn:hover {
+            transform: translateX(-3px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        }
+
+        .back-home-btn:active {
+            transform: scale(0.95);
+        }
+
+    </style>
+</head>
+<body>
+    <!-- <button class="back-home-btn" onclick="goHome()">
+        ⬅ Back to Home
+    </button> -->
+
+    <h1>Paging Simulator</h1>
+    <p>Architecture Level: Binary Translation</p>
+
+    <div class="main-container">
+        
+        <div class="panel hardware-section">
+            <canvas id="anim-canvas"></canvas>
+
+            <div class="hw-box" id="cpu-box">
+                <span class="hw-label">CPU (Logical Address)</span>
+                <div class="split-addr">
+                    <div class="split-part c-p" id="cpu-p-part">
+                        <span class="bit-label">Page (p)</span>
+                        <span id="disp-p" class="val-display">0</span>
+                        <span id="bin-p" class="binary-sub">00</span>
+                    </div>
+                    <div class="split-part c-d" id="cpu-d-part">
+                        <span class="bit-label">Offset (d)</span>
+                        <span id="disp-d" class="val-display">0</span>
+                        <span id="bin-d" class="binary-sub">00</span>
+                    </div>
+                </div>
+                <div class="bin-info">4 Bits Total</div>
+            </div>
+
+            <div class="hw-box" id="pt-box">
+                <span class="hw-label">Page Table</span>
+                <div class="scroll-area">
+                    <table class="data-table">
+                        <thead><tr><th>Page (p)</th><th>Frame (f)</th></tr></thead>
+                        <tbody id="pt-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="hw-box" id="phy-addr-box">
+                <span class="hw-label">Physical Address Reg</span>
+                <div class="split-addr">
+                    <div class="split-part c-f" id="phy-f-part">
+                        <span class="bit-label">Frame (f)</span>
+                        <span id="disp-f" class="val-display">-</span>
+                        <span id="bin-f" class="binary-sub">---</span>
+                    </div>
+                    <div class="split-part c-d" id="phy-d-part">
+                        <span class="bit-label">Offset (d)</span>
+                        <span id="disp-d-phy" class="val-display">-</span>
+                        <span id="bin-d-phy" class="binary-sub">--</span>
+                    </div>
+                </div>
+                <div class="bin-info">5 Bits Total (3+2)</div>
+            </div>
+
+            <div class="hw-box" id="ram-box">
+                <span class="hw-label">Physical Memory (RAM)</span>
+                <div class="scroll-area">
+                    <table class="data-table">
+                        <thead><tr><th>Frame No.</th><th>Content</th></tr></thead>
+                        <tbody id="ram-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel model-section">
+            <div class="mem-col">
+                <div class="col-title">Logical Memory</div>
+                <div class="scroll-area" id="logical-view" style="padding: 10px;"></div>
+            </div>
+
+            <div class="mem-col">
+                <div class="col-title">Physical Memory</div>
+                <div class="scroll-area" id="physical-view" style="padding: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="input-group">
+            <label>Page (p)</label>
+            <select id="sel-p" onchange="resetSim()">
+                <option value="0">0 (00)</option>
+                <option value="1">1 (01)</option>
+                <option value="2">2 (10)</option>
+                <option value="3">3 (11)</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Offset (d)</label>
+            <select id="sel-d" onchange="resetSim()">
+                <option value="0">0 (00)</option>
+                <option value="1">1 (01)</option>
+                <option value="2">2 (10)</option>
+                <option value="3">3 (11)</option>
+            </select>
+        </div>
+        
+        <div style="width: 1px; height: 30px; background: var(--panel-border); margin: 0 10px;"></div>
+
+        <button onclick="nextStep()" id="btn-next" class="btn btn-primary">
+            Next Step
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:5px"><path d="M5 12l6-6-6-6"/></svg>
+        </button>
+        <button onclick="resetSim()" class="btn btn-secondary">Reset</button>
+
+        <div class="status-display">
+            <div class="dots" id="dots-container">
+                <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div id="status-msg" class="status-text">Ready to Start</div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIC (STANDARD) ---
+        const logicalData = [
+            ['Data A', 'Data B', 'Data C', 'Data D'], 
+            ['Data E', 'Data F', 'Data G', 'Data H'], 
+            ['Data I', 'Data J', 'Data K', 'Data L'], 
+            ['Data M', 'Data N', 'Data O', 'Data P']
+        ];
+        let pageTable = [];
+        let currentStep = 0;
+        let isAnimating = false;
+
+        const canvas = document.getElementById('anim-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function toBin(num, bits) { return num.toString(2).padStart(bits, '0'); }
+
+        // --- INIT ---
+        function init() {
+            let usedFrames = new Set();
+            pageTable = [];
+            for(let i=0; i<4; i++) {
+                let f; do { f = Math.floor(Math.random() * 8); } while(usedFrames.has(f));
+                usedFrames.add(f);
+                pageTable.push(f);
+            }
+            renderTables();
+            renderMemoryViews();
+            resizeCanvas();
+            updateUI();
+        }
+
+        function renderTables() {
+            const ptBody = document.getElementById('pt-body');
+            ptBody.innerHTML = '';
+            pageTable.forEach((f, p) => {
+                ptBody.innerHTML += `
+                    <tr id="hw-pt-row-${p}">
+                        <td style="color:var(--accent-p)">${p} (${toBin(p,2)})</td>
+                        <td style="color:var(--accent-f)">${f} (${toBin(f,3)})</td>
+                    </tr>`;
+            });
+
+            const ramBody = document.getElementById('ram-body');
+            ramBody.innerHTML = '';
+            for(let f=0; f<8; f++) {
+                let pIdx = pageTable.indexOf(f);
+                let content = (pIdx !== -1) ? `<span style="color:#fff">Page ${pIdx}</span>` : `<span style="opacity:0.3">Free</span>`;
+                ramBody.innerHTML += `
+                    <tr id="hw-ram-row-${f}">
+                        <td style="font-family:'Fira Code'">Frame ${f} <span style="opacity:0.5">(${toBin(f,3)})</span></td>
+                        <td>${content}</td>
+                    </tr>`;
+            }
+        }
+
+        function renderMemoryViews() {
+            const logContainer = document.getElementById('logical-view');
+            logContainer.innerHTML = '';
+            logicalData.forEach((lines, pIdx) => {
+                let html = `<div class="mem-block"><div class="block-head">Page ${pIdx} <span style="opacity:0.5">${toBin(pIdx, 2)}</span></div>`;
+                lines.forEach((char, offset) => {
+                    html += `<div class="data-row" id="log-line-${pIdx}-${offset}">
+                                <span>${offset} <span style="opacity:0.5">(${toBin(offset,2)})</span></span>
+                                <span>${char}</span>
+                             </div>`;
+                });
+                html += `</div>`;
+                logContainer.innerHTML += html;
+            });
+
+            const phyContainer = document.getElementById('physical-view');
+            phyContainer.innerHTML = '';
+            for(let f=0; f<8; f++) {
+                let html = `<div class="mem-block"><div class="block-head">Frame ${f} <span style="opacity:0.5">${toBin(f,3)}</span></div>`;
+                let pIdx = pageTable.indexOf(f);
+                if(pIdx !== -1) {
+                    logicalData[pIdx].forEach((char, offset) => {
+                        html += `<div class="data-row" id="phy-line-${f}-${offset}">
+                                    <span>${offset} <span style="opacity:0.5">(${toBin(offset,2)})</span></span>
+                                    <span>${char}</span>
+                                 </div>`;
+                    });
+                } else {
+                    html += `<div style="padding:4px; text-align:center; opacity:0.3; font-size:0.7rem">- Empty -</div>`;
+                }
+                html += `</div>`;
+                phyContainer.innerHTML += html;
+            }
+        }
+
+        function goHome() {
+            window.location.href = "../../index.html"; // change if needed
+            // OR use: window.history.back();
+        }
+
+        // --- DRAWING LOGIC (UPDATED STYLE) ---
+        function getAnchor(id, side) {
+            const el = document.getElementById(id);
+            const root = document.querySelector('.hardware-section');
+            const r = el.getBoundingClientRect();
+            const c = root.getBoundingClientRect();
+            const relLeft = r.left - c.left;
+            const relTop = r.top - c.top;
+            
+            if(side === 'top') return { x: relLeft + r.width/2, y: relTop };
+            if(side === 'bottom') return { x: relLeft + r.width/2, y: relTop + r.height };
+            if(side === 'left') return { x: relLeft, y: relTop + r.height/2 };
+            if(side === 'right') return { x: relLeft + r.width, y: relTop + r.height/2 };
+        }
+
+        async function drawPolyline(points, color) {
+            return new Promise(resolve => {
+                let totalLength = 0;
+                for(let i=0; i<points.length-1; i++) {
+                    const dx = points[i+1].x - points[i].x;
+                    const dy = points[i+1].y - points[i].y;
+                    totalLength += Math.sqrt(dx*dx + dy*dy);
+                }
+
+                const speed = 7; 
+                let walked = 0;
+
+                function step() {
+                    walked += speed;
+                    if(walked > totalLength) walked = totalLength;
+
+                    let currentDist = walked;
+                    ctx.beginPath();
+                    ctx.moveTo(points[0].x, points[0].y);
+                    
+                    for(let i=0; i<points.length-1; i++) {
+                        const p1 = points[i];
+                        const p2 = points[i+1];
+                        const dx = p2.x - p1.x;
+                        const dy = p2.y - p1.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(currentDist <= dist) {
+                            const ratio = currentDist / dist;
+                            ctx.lineTo(p1.x + dx * ratio, p1.y + dy * ratio);
+                            break;
+                        } else {
+                            ctx.lineTo(p2.x, p2.y);
+                            currentDist -= dist;
+                        }
+                    }
+                    
+                    // NEW STYLE: Solid, clean line with no shadowBlur
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.stroke();
+
+                    if(walked < totalLength) requestAnimationFrame(step);
+                    else resolve();
+                }
+                step();
+            });
+        }
+
+        // --- STEP CONTROLLER ---
+        async function nextStep() {
+            if(isAnimating) return;
+            isAnimating = true;
+            document.getElementById('btn-next').disabled = true;
+            document.getElementById('sel-p').disabled = true;
+            document.getElementById('sel-d').disabled = true;
+
+            const p = parseInt(document.getElementById('sel-p').value);
+            const d = parseInt(document.getElementById('sel-d').value);
+            const f = pageTable[p];
+
+            document.getElementById('disp-p').innerText = p;
+            document.getElementById('bin-p').innerText = toBin(p, 2);
+            document.getElementById('disp-d').innerText = d;
+            document.getElementById('bin-d').innerText = toBin(d, 2);
+
+            switch(currentStep) {
+                case 0: // Extract P
+                    setStatus(`Extracted Page: ${p} (${toBin(p,2)})`);
+                    highlight(`log-line-${p}-${d}`, 'active-log');
+                    
+                    const cpuP = getAnchor('cpu-p-part', 'bottom');
+                    const ptTop = getAnchor('pt-box', 'top');
+                    
+                    await drawPolyline([
+                        {x: cpuP.x, y: cpuP.y},
+                        {x: cpuP.x, y: ptTop.y}
+                    ], '#0ea5e9'); // Accent-P
+                    currentStep++;
+                    break;
+
+                case 1: // Lookup F
+                    setStatus(`Mapping: Page ${p} → Frame ${f}`);
+                    highlight(`hw-pt-row-${p}`, 'row-highlight');
+                    
+                    await new Promise(r => setTimeout(r, 300));
+
+                    const ptTopRef = getAnchor('pt-box', 'top');
+                    const phyF = getAnchor('phy-f-part', 'bottom');
+                    const midY = (getAnchor('cpu-box', 'bottom').y + ptTopRef.y) / 2;
+
+                    await drawPolyline([
+                        {x: ptTopRef.x + 40, y: ptTopRef.y},
+                        {x: ptTopRef.x + 40, y: midY},
+                        {x: phyF.x, y: midY},
+                        {x: phyF.x, y: phyF.y}
+                    ], '#d946ef'); // Accent-F
+
+                    document.getElementById('disp-f').innerText = f;
+                    document.getElementById('bin-f').innerText = toBin(f, 3);
+                    currentStep++;
+                    break;
+
+                case 2: // Transfer D
+                    setStatus(`Offset ${d} (${toBin(d,2)}) Copied Direct`);
+                    
+                    const cpuD = getAnchor('cpu-d-part', 'top');
+                    const phyD = getAnchor('phy-d-part', 'top');
+                    const archHeight = cpuD.y - 60;
+                    
+                    await drawPolyline([
+                        {x: cpuD.x, y: cpuD.y},
+                        {x: cpuD.x, y: archHeight},
+                        {x: phyD.x, y: archHeight},
+                        {x: phyD.x, y: phyD.y}
+                    ], '#22c55e'); // Accent-D
+
+                    document.getElementById('disp-d-phy').innerText = d;
+                    document.getElementById('bin-d-phy').innerText = toBin(d, 2);
+                    currentStep++;
+                    break;
+
+                case 3: // Access RAM
+                    setStatus(`Accessing Addr: ${toBin(f,3)}${toBin(d,2)}`);
+                    const phyBot = getAnchor('phy-addr-box', 'bottom');
+                    const ramTop = getAnchor('ram-box', 'top');
+                    
+                    await drawPolyline([
+                        {x: phyBot.x, y: phyBot.y},
+                        {x: phyBot.x, y: ramTop.y}
+                    ], '#f8fafc'); // White
+                    
+                    highlight(`hw-ram-row-${f}`, 'row-highlight');
+                    highlight(`phy-line-${f}-${d}`, 'active-phy');
+                    currentStep++;
+                    break;
+            }
+
+            isAnimating = false;
+            updateUI();
+        }
+
+        function resetSim() {
+            currentStep = 0;
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            document.querySelectorAll('.active-log, .active-phy, .row-highlight').forEach(el => {
+                el.classList.remove('active-log', 'active-phy', 'row-highlight');
+            });
+            
+            document.getElementById('disp-p').innerText = document.getElementById('sel-p').value;
+            document.getElementById('bin-p').innerText = toBin(parseInt(document.getElementById('sel-p').value), 2);
+            document.getElementById('disp-d').innerText = document.getElementById('sel-d').value;
+            document.getElementById('bin-d').innerText = toBin(parseInt(document.getElementById('sel-d').value), 2);
+            document.getElementById('disp-f').innerText = '-';
+            document.getElementById('bin-f').innerText = '---';
+            document.getElementById('disp-d-phy').innerText = '-';
+            document.getElementById('bin-d-phy').innerText = '--';
+
+            document.getElementById('sel-p').disabled = false;
+            document.getElementById('sel-d').disabled = false;
+            
+            setStatus("Ready to Start");
+            updateUI();
+        }
+
+        function setStatus(msg) { document.getElementById('status-msg').innerText = msg; }
+
+        function highlight(id, cls) {
+            const el = document.getElementById(id);
+            if(el) { el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add(cls); }
+        }
+
+        function updateUI() {
+            const btn = document.getElementById('btn-next');
+            if(currentStep >= 4) {
+                btn.innerHTML = `Finished <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`;
+                btn.disabled = true;
+            } else {
+                btn.innerHTML = `Next Step <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l6-6-6-6"/></svg>`;
+                btn.disabled = false;
+            }
+            
+            document.querySelectorAll('.dot').forEach((d, i) => {
+                if(i <= currentStep) d.classList.add('active');
+                else d.classList.remove('active');
+            });
+        }
+
+        function resizeCanvas() {
+            const c = document.querySelector('.hardware-section');
+            canvas.width = c.offsetWidth;
+            canvas.height = c.offsetHeight;
+        }
+        window.onresize = resizeCanvas;
+        window.onload = init;
+
+    </script>
+</body>
+</html>

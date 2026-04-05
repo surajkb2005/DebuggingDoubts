@@ -40,6 +40,23 @@ const Navbar = () => {
               </>
             )}
           </NavLink>
+          <NavLink
+            to="/animations"
+            className={({ isActive }) =>
+              `relative px-2 py-1 transition-all duration-300 ${isActive ? "text-blue-400" : "text-gray-300 hover:text-white"
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                Animations
+                <span
+                  className={`absolute left-0 -bottom-1 h-[2px] w-full bg-blue-500 transition-all duration-300 ${isActive ? "scale-x-100" : "scale-x-0"
+                    } origin-left`}
+                />
+              </>
+            )}
+          </NavLink>
           {user ? (
             <>
               {/* Dashboard */}

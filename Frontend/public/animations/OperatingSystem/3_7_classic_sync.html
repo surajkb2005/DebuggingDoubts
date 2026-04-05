@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Classic Synchronization Problems – Visual Simulator</title>
+
+<style>
+    body {
+        font-family: "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e5e7eb;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1, h2 {
+        text-align: center;
+        color: #38bdf8;
+    }
+
+    .section {
+        margin: 40px;
+        padding: 30px;
+        background: #020617;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(56,189,248,0.2);
+    }
+
+    button {
+        padding: 10px 18px;
+        margin: 10px;
+        border: none;
+        border-radius: 6px;
+        background: #38bdf8;
+        color: #020617;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #0ea5e9;
+    }
+
+    /* ---------------- BUFFER ---------------- */
+    .buffer {
+        display: flex;
+        justify-content: center;
+        margin: 20px;
+    }
+
+    .slot {
+        width: 60px;
+        height: 60px;
+        border: 2px solid #38bdf8;
+        margin: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        background: #020617;
+    }
+
+    .filled {
+        background: #22c55e;
+        color: black;
+    }
+
+    /* ---------------- READERS WRITERS ---------------- */
+    .rw-box {
+        text-align: center;
+        font-size: 18px;
+        margin-top: 15px;
+    }
+
+    .reader {
+        color: #22c55e;
+    }
+
+    .writer {
+        color: #f97316;
+    }
+
+    /* ---------------- PHILOSOPHERS ---------------- */
+    .table {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        margin: 40px auto;
+        border-radius: 50%;
+        border: 4px solid #38bdf8;
+    }
+
+    .philosopher {
+        position: absolute;
+        width: 80px;
+        height: 40px;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .fork {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #64748b;
+        position: absolute;
+    }
+
+    .eating {
+        color: #22c55e;
+        font-weight: bold;
+    }
+
+    footer {
+        text-align: center;
+        padding: 20px;
+        opacity: 0.6;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Classic Problems of Synchronization (Textbook Visualization)</h1>
+
+<!-- ========================================================= -->
+<!-- 1. BOUNDED BUFFER -->
+<!-- ========================================================= -->
+<div class="section">
+<h2>5.7.1 Bounded Buffer (Producer–Consumer)</h2>
+
+<p style="text-align:center">
+Producer adds item → Consumer removes item <br>
+Semaphores: <b>empty, full, mutex</b>
+</p>
+
+<div class="buffer" id="buffer"></div>
+
+<div style="text-align:center">
+<button onclick="produce()">Produce</button>
+<button onclick="consume()">Consume</button>
+</div>
+
+<p id="bufferStatus" style="text-align:center"></p>
+</div>
+
+<!-- ========================================================= -->
+<!-- 2. READERS WRITERS -->
+<!-- ========================================================= -->
+<div class="section">
+<h2>5.7.2 Readers–Writers Problem</h2>
+
+<div style="text-align:center">
+<button onclick="addReader()">Reader Enter</button>
+<button onclick="removeReader()">Reader Exit</button>
+<button onclick="writerEnter()">Writer Enter</button>
+<button onclick="writerExit()">Writer Exit</button>
+</div>
+
+<div class="rw-box">
+<p>Readers Count: <span id="readerCount">0</span></p>
+<p>Database Status: <span id="dbStatus">FREE</span></p>
+</div>
+</div>
+
+<!-- ========================================================= -->
+<!-- 3. DINING PHILOSOPHERS -->
+<!-- ========================================================= -->
+<div class="section">
+<h2>5.7.3 Dining Philosophers Problem</h2>
+
+<div class="table" id="table">
+    <div class="philosopher" style="top:-10px; left:110px;" id="p0">P0</div>
+    <div class="philosopher" style="top:60px; right:-10px;" id="p1">P1</div>
+    <div class="philosopher" style="bottom:20px; right:20px;" id="p2">P2</div>
+    <div class="philosopher" style="bottom:20px; left:20px;" id="p3">P3</div>
+    <div class="philosopher" style="top:60px; left:-10px;" id="p4">P4</div>
+</div>
+
+<div style="text-align:center">
+<button onclick="eat()">Try Eating</button>
+<button onclick="resetPhilosophers()">Reset</button>
+</div>
+
+<p style="text-align:center" id="philoStatus"></p>
+</div>
+
+<footer>
+Based strictly on Operating System Concepts – 9th Edition<br>
+Educational Visualization Only
+</footer>
+
+<script>
+/* ================= BOUNDED BUFFER ================= */
+const BUFFER_SIZE = 5;
+let bufferCount = 0;
+
+const bufferDiv = document.getElementById("buffer");
+const bufferStatus = document.getElementById("bufferStatus");
+
+function drawBuffer() {
+    bufferDiv.innerHTML = "";
+    for (let i = 0; i < BUFFER_SIZE; i++) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        if (i < bufferCount) {
+            slot.classList.add("filled");
+            slot.innerText = "ITEM";
+        }
+        bufferDiv.appendChild(slot);
+    }
+    bufferStatus.innerText =
+        `empty = ${BUFFER_SIZE - bufferCount}, full = ${bufferCount}`;
+}
+
+function produce() {
+    if (bufferCount < BUFFER_SIZE) {
+        bufferCount++;
+        drawBuffer();
+    } else {
+        alert("Buffer FULL → Producer must wait");
+    }
+}
+
+function consume() {
+    if (bufferCount > 0) {
+        bufferCount--;
+        drawBuffer();
+    } else {
+        alert("Buffer EMPTY → Consumer must wait");
+    }
+}
+
+drawBuffer();
+
+/* ================= READERS WRITERS ================= */
+let readers = 0;
+let writerActive = false;
+
+const readerCountSpan = document.getElementById("readerCount");
+const dbStatus = document.getElementById("dbStatus");
+
+function addReader() {
+    if (writerActive) {
+        alert("Writer active → Reader waits");
+        return;
+    }
+    readers++;
+    readerCountSpan.innerText = readers;
+    dbStatus.innerHTML = "<span class='reader'>READING</span>";
+}
+
+function removeReader() {
+    if (readers > 0) readers--;
+    readerCountSpan.innerText = readers;
+    if (readers === 0) dbStatus.innerText = "FREE";
+}
+
+function writerEnter() {
+    if (readers > 0 || writerActive) {
+        alert("Readers present → Writer waits");
+        return;
+    }
+    writerActive = true;
+    dbStatus.innerHTML = "<span class='writer'>WRITING</span>";
+}
+
+function writerExit() {
+    writerActive = false;
+    dbStatus.innerText = "FREE";
+}
+
+/* ================= PHILOSOPHERS ================= */
+let forks = [true, true, true, true, true];
+
+function eat() {
+    for (let i = 0; i < 5; i++) {
+        let left = i;
+        let right = (i + 1) % 5;
+        if (forks[left] && forks[right]) {
+            forks[left] = forks[right] = false;
+            document.getElementById("p" + i).classList.add("eating");
+            document.getElementById("philoStatus").innerText =
+                `Philosopher ${i} is eating (deadlock avoided)`;
+            return;
+        }
+    }
+    document.getElementById("philoStatus").innerText =
+        "No philosopher can eat now → Possible deadlock situation";
+}
+
+function resetPhilosophers() {
+    forks = [true, true, true, true, true];
+    for (let i = 0; i < 5; i++) {
+        document.getElementById("p" + i).classList.remove("eating");
+    }
+    document.getElementById("philoStatus").innerText = "";
+}
+</script>
+
+</body>
+</html>

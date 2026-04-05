@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Banker's Algorithm - Aligned</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg: #2d3436;
+            --panel: #353b48;
+            --sidebar: #1e272e;
+            --text: #dfe6e9;
+            --accent: #0984e3;
+            
+            /* HEIGHT VARIABLES */
+            --row-height: 50px;
+            --header-height: 40px;
+            --spacing: 4px;
+
+            --highlight-check: #fdcb6e; 
+            --safe: #00b894; 
+            --fail: #d63031; 
+        }
+
+        body {
+            font-family: 'Segoe UI', monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 10px;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 { margin: 5px 0; color: #fff; letter-spacing: 1px; font-size: 1.5rem; }
+
+        .main-container {
+            display: flex;
+            width: 98%;
+            height: 88vh;
+            gap: 15px;
+        }
+
+        /* SIDEBAR */
+        .algo-sidebar {
+            flex: 0.8;
+            background: var(--sidebar);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #444;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .algo-sidebar h3 { color: var(--accent); margin-top: 0; border-bottom: 1px solid #555; padding-bottom: 10px; }
+        .algo-step { margin-bottom: 15px; line-height: 1.4; color: #b2bec3; }
+        .math-block { background: #000; padding: 5px; border-radius: 4px; font-family: 'Consolas'; margin-top: 5px; display: block; color: #fff;}
+
+        /* VISUAL AREA */
+        .visual-area {
+            flex: 3;
+            background: var(--panel);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        /* LOGS */
+        .log-area {
+            flex: 1;
+            background: #000;
+            border: 2px solid #555;
+            border-radius: 12px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        /* WORK DISPLAY */
+        .work-box {
+            font-size: 2.2rem;
+            background: #2d3436;
+            padding: 10px 40px;
+            border-radius: 60px;
+            border: 3px solid var(--accent);
+            margin-bottom: 25px;
+            font-weight: bold;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .work-label { font-size: 1.2rem; color: #aaa; margin-right: 10px; }
+        .work-digit { display: inline-block; padding: 5px 12px; border-radius: 8px; transition: 0.3s; }
+        
+        .comparing-active {
+            background-color: var(--highlight-check) !important;
+            color: #2d3436 !important;
+            font-weight: bold;
+            transform: scale(1.2);
+            box-shadow: 0 0 15px var(--highlight-check);
+        }
+
+        /* MATRICES CONTAINER */
+        .matrices-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        /* MATRIX BLOCK STYLES */
+        .matrix-block { text-align: center; }
+        
+        /* Titles */
+        .matrix-block h3 { 
+            margin: 0 0 5px 0; 
+            color: #b2bec3; 
+            font-size: 0.9rem; 
+            text-transform: uppercase; 
+            height: 20px; /* Enforce height so empty titles match filled titles */
+        }
+
+        /* ALL TABLES (Data + Process List) */
+        table { 
+            border-collapse: separate; 
+            border-spacing: var(--spacing); /* 4px */
+        }
+        
+        /* HEADERS */
+        th { 
+            color: var(--accent); 
+            font-weight: bold; 
+            height: var(--header-height); /* 40px */
+            vertical-align: bottom;
+            padding-bottom: 5px;
+        }
+        
+        /* CELLS */
+        td {
+            border: 1px solid #636e72;
+            background: #2d3436;
+            width: 40px;
+            height: var(--row-height); /* 50px */
+            text-align: center;
+            font-size: 1.2rem;
+            border-radius: 5px;
+        }
+
+        /* SPECIFIC STYLES FOR THE PROCESS LIST TABLE */
+        #tbl-processes td {
+            border: none; /* No border for the labels */
+            background: transparent; /* No background */
+            font-weight: bold;
+            width: auto; /* Allow width to fit text */
+            padding: 0 5px;
+        }
+        
+        .pointer-cell { width: 30px !important; text-align: right; font-size: 1.5rem; }
+        .name-cell { color: #fff; font-size: 1.2rem; }
+        .badge-cell { width: 40px !important; }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: var(--fail);
+            color: white;
+            display: inline-block;
+        }
+        .status-true { background: var(--safe); }
+
+        /* ANIMATION STATES */
+        .row-safe td { border-color: var(--safe); color: var(--safe); opacity: 0.6; }
+        .row-wait td { border-color: var(--fail); color: var(--fail); }
+
+        /* CONTROLS */
+        .controls { margin-top: auto; display: flex; gap: 15px; }
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        #btn-calc { background: var(--accent); color: white; }
+        #btn-start { background: var(--highlight-check); color: #2d3436; }
+        #btn-next { background: var(--safe); color: white; }
+        button:disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(100%); }
+
+        /* OVERLAY */
+        #celebration {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+            z-index: 100;
+        }
+        .cel-text { font-size: 3rem; color: var(--safe); font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 20px var(--safe); }
+        .cel-sub { font-size: 1.2rem; color: #fff; }
+
+        /* LOG COLORS */
+        .log-entry { margin-bottom: 6px; border-bottom: 1px solid #333; padding-bottom: 3px; }
+        .t-green { color: var(--safe); } 
+        .t-red { color: var(--fail); } 
+        .t-yellow { color: var(--highlight-check); } 
+        .t-blue { color: var(--accent); }
+        .back-home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .back-home-btn:hover {
+            transform: translateX(-3px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        }
+
+        .back-home-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <!-- <button class="back-home-btn" onclick="goHome()">
+        ⬅ Back to Home
+    </button> -->
+
+    <h1>Banker's Algorithm Visualizer</h1>
+
+    <div class="main-container">
+
+        <div class="algo-sidebar">
+            <h3>Safety Algorithm</h3>
+            <div class="algo-step">
+                1. Let <strong>Work</strong> and <strong>Finish</strong> be vectors.
+                <span class="math-block">Work = Available</span>
+                <span class="math-block">Finish[i] = false</span>
+            </div>
+            <div class="algo-step">
+                2. Find an index <strong>i</strong> such that:
+                <span class="math-block">(a) Finish[i] == false</span>
+                <span class="math-block">(b) Need<sub>i</sub> <= Work</span>
+            </div>
+            <div class="algo-step">
+                3. If Condition is True:
+                <span class="math-block">Work = Work + Allocation<sub>i</sub></span>
+                <span class="math-block">Finish[i] = true</span>
+            </div>
+            <div class="algo-step">
+                4. If <strong>Finish[i] == true</strong> for all i, then Safe.
+            </div>
+        </div>
+        
+        <div class="visual-area">
+            
+            <div class="work-box">
+                <span class="work-label">WORK (Available):</span> 
+                [ <div id="w-0" class="work-digit">3</div>, 
+                  <div id="w-1" class="work-digit">3</div>, 
+                  <div id="w-2" class="work-digit">2</div> ]
+            </div>
+
+            <div class="matrices-wrapper">
+                
+                <div class="matrix-block">
+                    <h3 style="visibility: hidden;">Proc</h3>
+                    <table id="tbl-processes">
+                        <thead><tr><th>&nbsp;</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="matrix-block">
+                    <h3>Max</h3>
+                    <table id="tbl-max">
+                        <thead><tr><th>A</th><th>B</th><th>C</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="matrix-block">
+                    <h3>Allocation</h3>
+                    <table id="tbl-alloc">
+                        <thead><tr><th>A</th><th>B</th><th>C</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="matrix-block">
+                    <h3>Need</h3>
+                    <table id="tbl-need">
+                        <thead><tr><th>A</th><th>B</th><th>C</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="btn-calc" onclick="runNeedAnim()">1. Calc Need Matrix</button>
+                <button id="btn-start" onclick="initSafety()" disabled>2. Start Safety Algo</button>
+                <button id="btn-next" onclick="nextStep()" disabled>Next Step >></button>
+                <button onclick="location.reload()" style="background:#636e72; color:white;">Reset</button>
+            </div>
+
+            <div id="celebration">
+                <div class="cel-text">🎉 SYSTEM IS SAFE! 🎉</div>
+                <div class="cel-sub" id="safe-seq-display"></div>
+                <button onclick="location.reload()" style="margin-top:30px; background:var(--accent); color:white;">Restart</button>
+            </div>
+        </div>
+
+        <div class="log-area" id="logger">
+            <div class="log-entry t-blue">System Ready.</div>
+        </div>
+    </div>
+
+    <script>
+        // DATA
+        const processes = ['P0', 'P1', 'P2', 'P3', 'P4'];
+        const labels = ['A', 'B', 'C'];
+        const alloc = [[0, 1, 0], [2, 0, 0], [3, 0, 2], [2, 1, 1], [0, 0, 2]];
+        const max = [[7, 5, 3], [3, 2, 2], [9, 0, 2], [2, 2, 2], [4, 3, 3]];
+        
+        let work = [3, 3, 2];
+        let need = [];
+        let finish = [false, false, false, false, false];
+        let safeSeq = [];
+        let currentIdx = 0;
+        let isRunning = false;
+
+        window.onload = () => {
+            renderTable('tbl-alloc', alloc);
+            renderTable('tbl-max', max);
+            renderTable('tbl-need', alloc.map(()=>['?','?','?']));
+            renderProcessTable(); // New renderer
+        };
+
+        function renderTable(id, data) {
+            const tbody = document.querySelector(`#${id} tbody`);
+            tbody.innerHTML = '';
+            data.forEach((row, i) => {
+                const tr = document.createElement('tr');
+                tr.id = `${id}-row-${i}`;
+                row.forEach((val, j) => {
+                    const td = document.createElement('td');
+                    td.innerText = val;
+                    td.id = `${id}-c-${i}-${j}`;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        // UPDATED: Render Processes as a TABLE ROW to guarantee alignment
+        function renderProcessTable() {
+            const tbody = document.querySelector(`#tbl-processes tbody`);
+            tbody.innerHTML = '';
+            processes.forEach((p, i) => {
+                const tr = document.createElement('tr');
+                
+                // 1. Pointer Cell
+                const tdPtr = document.createElement('td');
+                tdPtr.className = 'pointer-cell';
+                tdPtr.id = `ptr-${i}`;
+                tr.appendChild(tdPtr);
+
+                // 2. Name Cell
+                const tdName = document.createElement('td');
+                tdName.className = 'name-cell';
+                tdName.innerText = p;
+                tr.appendChild(tdName);
+
+                // 3. Status Badge Cell
+                const tdBadge = document.createElement('td');
+                tdBadge.className = 'badge-cell';
+                tdBadge.innerHTML = `<span class="status-badge" id="badge-${i}">F</span>`;
+                tr.appendChild(tdBadge);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function log(msg, cls='') {
+            const box = document.getElementById('logger');
+            const d = document.createElement('div');
+            d.innerHTML = `> ${msg}`;
+            d.className = `log-entry ${cls}`;
+            box.appendChild(d);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function goHome() {
+            window.location.href = "../../index.html"; // change if needed
+            // OR use: window.history.back();
+        }
+
+        // --- 1. NEED CALCULATION ---
+        async function runNeedAnim() {
+            document.getElementById('btn-calc').disabled = true;
+            need = [];
+            for(let i=0; i<processes.length; i++) {
+                let row = [];
+                document.getElementById(`ptr-${i}`).innerText = "👉";
+                
+                for(let j=0; j<3; j++) {
+                    const mCell = document.getElementById(`tbl-max-c-${i}-${j}`);
+                    const aCell = document.getElementById(`tbl-alloc-c-${i}-${j}`);
+                    mCell.classList.add('comparing-active');
+                    aCell.classList.add('comparing-active');
+
+                    await new Promise(r => setTimeout(r, 1000)); 
+
+                    let val = max[i][j] - alloc[i][j];
+                    row.push(val);
+
+                    const nCell = document.getElementById(`tbl-need-c-${i}-${j}`);
+                    nCell.innerText = val;
+                    nCell.classList.add('comparing-active');
+
+                    mCell.classList.remove('comparing-active');
+                    aCell.classList.remove('comparing-active');
+                    
+                    await new Promise(r => setTimeout(r, 300));
+                    nCell.classList.remove('comparing-active');
+                }
+                need.push(row);
+                document.getElementById(`ptr-${i}`).innerText = "";
+            }
+            log("Need Matrix Calculated.", "t-green");
+            document.getElementById('btn-start').disabled = false;
+        }
+
+        // --- 2. SAFETY ALGORITHM ---
+        function initSafety() {
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-next').disabled = false;
+            isRunning = true;
+            currentIdx = 0;
+            log("--- Safety Algorithm Started ---", "t-yellow");
+        }
+
+        async function nextStep() {
+            if(!isRunning) return;
+
+            if(finish.every(Boolean)) {
+                log("ALL PROCESSES FINISHED!", "t-green");
+                showCelebration();
+                return;
+            }
+
+            processes.forEach((_,x) => document.getElementById(`ptr-${x}`).innerText = "");
+            let pIdx = currentIdx;
+            document.getElementById(`ptr-${pIdx}`).innerText = "👉";
+
+            if(finish[pIdx]) {
+                log(`${processes[pIdx]} already Done. Skipping...`, "t-blue");
+                advancePointer();
+                return;
+            }
+
+            log(`Checking <strong>${processes[pIdx]}</strong>...`);
+            let needRow = document.getElementById(`tbl-need-row-${pIdx}`);
+            needRow.style.background = "#444";
+
+            let isSatisfied = true;
+            
+            for(let j=0; j<3; j++) {
+                let needCell = document.getElementById(`tbl-need-c-${pIdx}-${j}`);
+                let workDigit = document.getElementById(`w-${j}`);
+                
+                needCell.classList.add('comparing-active');
+                workDigit.classList.add('comparing-active');
+
+                log(`&nbsp;&nbsp;Check ${labels[j]}: Need(${need[pIdx][j]}) <= Work(${work[j]})?`);
+                
+                await new Promise(r => setTimeout(r, 1200));
+
+                if(need[pIdx][j] > work[j]) {
+                    log(`&nbsp;&nbsp;FAIL! Not enough ${labels[j]}.`, "t-red");
+                    isSatisfied = false;
+                    needCell.classList.remove('comparing-active');
+                    workDigit.classList.remove('comparing-active');
+                    break;
+                } else {
+                    log(`&nbsp;&nbsp;OK.`, "t-green");
+                }
+
+                needCell.classList.remove('comparing-active');
+                workDigit.classList.remove('comparing-active');
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            if(isSatisfied) {
+                log(`<strong>${processes[pIdx]}</strong> Condition Met!`, "t-green");
+                log(`Executing ${processes[pIdx]} & Releasing Resources...`);
+
+                for(let j=0; j<3; j++) {
+                    let allocCell = document.getElementById(`tbl-alloc-c-${pIdx}-${j}`);
+                    let workDigit = document.getElementById(`w-${j}`);
+                    
+                    allocCell.classList.add('comparing-active'); 
+                    workDigit.classList.add('comparing-active'); 
+
+                    await new Promise(r => setTimeout(r, 800));
+
+                    work[j] += alloc[pIdx][j];
+                    workDigit.innerText = work[j];
+
+                    allocCell.classList.remove('comparing-active');
+                    workDigit.classList.remove('comparing-active');
+                }
+
+                finish[pIdx] = true;
+                safeSeq.push(processes[pIdx]);
+                
+                document.getElementById(`badge-${pIdx}`).innerText = "T";
+                document.getElementById(`badge-${pIdx}`).classList.add("status-true");
+                document.getElementById(`tbl-alloc-row-${pIdx}`).classList.add('row-safe');
+                document.getElementById(`tbl-need-row-${pIdx}`).classList.add('row-safe');
+                needRow.style.background = "transparent";
+
+                log(`${processes[pIdx]} Finished. New Work = [${work}]`);
+                advancePointer();
+
+            } else {
+                log(`${processes[pIdx]} must WAIT.`, "t-red");
+                needRow.style.background = "transparent";
+                needRow.classList.add('row-wait');
+                setTimeout(()=> needRow.classList.remove('row-wait'), 500);
+                advancePointer();
+            }
+        }
+
+        function advancePointer() {
+            currentIdx++;
+            if(currentIdx >= processes.length) {
+                log("End of list. Wrapping to P0...", "t-yellow");
+                currentIdx = 0;
+            }
+        }
+
+        function showCelebration() {
+            const overlay = document.getElementById('celebration');
+            const seqText = document.getElementById('safe-seq-display');
+            overlay.style.display = 'flex';
+            seqText.innerHTML = "Safe Sequence: < " + safeSeq.join(" &rarr; ") + " >";
+            document.getElementById('btn-next').disabled = true;
+        }
+
+    </script>
+</body>
+</html>

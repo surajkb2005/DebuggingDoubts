@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Semaphore Animation - OS Concepts</title>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: linear-gradient(120deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 40px;
+        }
+
+        .box {
+            width: 30%;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .box h2 {
+            margin-bottom: 15px;
+            color: #00ffd5;
+        }
+
+        .process {
+            padding: 10px;
+            margin: 8px 0;
+            background: #00c6ff;
+            color: black;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.4s ease;
+        }
+
+        .critical .process {
+            background: #00ff7f;
+        }
+
+        .waiting .process {
+            background: #ff7675;
+        }
+
+        .controls {
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 18px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            background: #00ffd5;
+            color: black;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #00c6ff;
+        }
+
+        .semaphore {
+            margin-top: 20px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .green {
+            color: #00ff7f;
+        }
+
+        .red {
+            color: #ff4c4c;
+        }
+
+        footer {
+            margin-top: 40px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .controls {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Semaphore Visualization</h1>
+<p>Operating System Concepts – Section 5.6</p>
+
+<div class="semaphore">
+    Semaphore Value (S): <span id="semValue" class="green">2</span>
+</div>
+
+<div class="container">
+    <div class="box">
+        <h2>Ready Queue</h2>
+        <div id="ready"></div>
+    </div>
+
+    <div class="box critical">
+        <h2>Critical Section</h2>
+        <div id="critical"></div>
+    </div>
+
+    <div class="box waiting">
+        <h2>Waiting Queue</h2>
+        <div id="waiting"></div>
+    </div>
+</div>
+
+<div class="controls">
+    <button onclick="addProcess()">Add Process</button>
+    <button onclick="waitOperation()">wait()</button>
+    <button onclick="signalOperation()">signal()</button>
+    <button onclick="resetAll()">Reset</button>
+</div>
+
+<footer>
+    Semaphore Simulation | No Busy Waiting | Interactive Learning
+</footer>
+
+<script>
+    let semaphore = 4; // binary semaphore (CS capacity = 1)
+    let processCount = 1;
+    const CS_CAPACITY = 4;
+
+    const ready = document.getElementById("ready");
+    const critical = document.getElementById("critical");
+    const waiting = document.getElementById("waiting");
+    const semValue = document.getElementById("semValue");
+
+    function updateSemaphore() {
+        semValue.textContent = semaphore;
+        semValue.className = semaphore >= 0 ? "green" : "red";
+    }
+
+    function addProcess() {
+        const p = document.createElement("div");
+        p.className = "process";
+        p.textContent = "P" + processCount++;
+        ready.appendChild(p);
+    }
+
+    function waitOperation() {
+        if (!ready.firstChild) return;
+
+        const p = ready.firstChild;
+        ready.removeChild(p);
+
+        semaphore--;
+        updateSemaphore();
+
+        if (critical.children.length < CS_CAPACITY && semaphore >= 0) {
+            critical.appendChild(p);
+        } else {
+            waiting.appendChild(p);
+        }
+    }
+
+
+    function signalOperation() {
+        if (critical.children.length === 0) return;
+
+        // Process exits critical section
+        const exiting = critical.firstChild;
+        critical.removeChild(exiting);
+        ready.appendChild(exiting);
+
+        semaphore++;          // ✔ Correct
+        updateSemaphore();
+
+        // Wake exactly ONE waiting process
+        if (waiting.firstChild) {
+            const awakened = waiting.firstChild;
+            waiting.removeChild(awakened);
+            critical.appendChild(awakened);
+            // ❌ NO semaphore-- here
+        }
+    }
+
+    function resetAll() {
+        semaphore = 1;
+        processCount = 1;
+        ready.innerHTML = "";
+        critical.innerHTML = "";
+        waiting.innerHTML = "";
+        updateSemaphore();
+    }
+
+    updateSemaphore();
+</script>
+
+
+</body>
+</html>

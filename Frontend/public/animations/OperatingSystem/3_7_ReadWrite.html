@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Readers–Writers Step-by-Step Visualization</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Segoe UI, sans-serif;
+    background:#020617;
+    color:#e5e7eb;
+}
+h1{
+    text-align:center;
+    color:#38bdf8;
+    margin:10px 0;
+}
+.container{
+    display:grid;
+    grid-template-columns: 1.1fr 1fr;
+    height:90vh;
+}
+
+/* ===== CODE PANEL ===== */
+.code{
+    padding:20px;
+    border-right:3px solid #38bdf8;
+}
+h2{ color:#38bdf8; }
+
+pre{
+    background:#020617;
+    border:1px solid #38bdf8;
+    border-radius:8px;
+    padding:12px;
+    line-height:1.6;
+}
+.line{
+    display:block;
+    padding:2px 6px;
+}
+.active{
+    background:#164e63;
+    border-left:4px solid #38bdf8;
+}
+
+/* ===== VISUAL PANEL ===== */
+.visual{
+    padding:20px;
+    text-align:center;
+}
+.state{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:10px;
+}
+.box{
+    border:2px solid #38bdf8;
+    border-radius:8px;
+    padding:10px;
+}
+.controls button{
+    padding:10px 18px;
+    margin:8px;
+    font-weight:bold;
+    border:none;
+    border-radius:6px;
+    background:#38bdf8;
+    cursor:pointer;
+}
+.controls button:hover{
+    background:#0ea5e9;
+}
+.reader{ color:#22c55e; font-weight:bold; }
+.writer{ color:#f97316; font-weight:bold; }
+#explain{
+    margin-top:15px;
+    min-height:45px;
+    font-style:italic;
+    color:#cbd5f5;
+}
+</style>
+</head>
+
+<body>
+
+<h1>5.7.2 Readers–Writers Problem (Step-by-Step)</h1>
+
+<div class="container">
+
+<!-- ================= CODE SIDE ================= -->
+<div class="code">
+
+<h2>Reader Code (Textbook)</h2>
+<pre>
+<span class="line" id="r1">wait(mutex);</span>
+<span class="line" id="r2">read_count++;</span>
+<span class="line" id="r3">if (read_count == 1)</span>
+<span class="line" id="r4">    wait(rw_mutex);</span>
+<span class="line" id="r5">signal(mutex);</span>
+<span class="line">// READ DATABASE</span>
+<span class="line" id="r6">wait(mutex);</span>
+<span class="line" id="r7">read_count--;</span>
+<span class="line" id="r8">if (read_count == 0)</span>
+<span class="line" id="r9">    signal(rw_mutex);</span>
+<span class="line" id="r10">signal(mutex);</span>
+</pre>
+
+<h2>Writer Code (Textbook)</h2>
+<pre>
+<span class="line" id="w1">wait(rw_mutex);</span>
+<span class="line">// WRITE DATABASE</span>
+<span class="line" id="w2">signal(rw_mutex);</span>
+</pre>
+
+</div>
+
+<!-- ================= VISUAL SIDE ================= -->
+<div class="visual">
+
+<div class="state">
+<div class="box">
+<b>read_count</b>
+<p id="rcVal">0</p>
+</div>
+<div class="box">
+<b>mutex</b>
+<p id="mutexVal">1</p>
+</div>
+<div class="box">
+<b>rw_mutex</b>
+<p id="rwVal">1</p>
+</div>
+</div>
+
+<h3>Database Status</h3>
+<p id="dbStatus">FREE</p>
+
+<div class="controls">
+<button onclick="readerStep()">▶ Reader Next Step</button>
+<button onclick="writerStep()">▶ Writer Next Step</button>
+<button onclick="resetAll()">🔄 Reset</button>
+</div>
+
+<p id="explain"></p>
+
+</div>
+</div>
+
+<script>
+/* ===== TEXTBOOK VARIABLES ===== */
+let read_count = 0;
+let mutex = 1;
+let rw_mutex = 1;
+
+/* ===== STEP TRACKERS ===== */
+let rStep = 0;
+let wStep = 0;
+
+/* ===== HELPERS ===== */
+function clearHighlight(){
+    document.querySelectorAll(".line")
+        .forEach(l=>l.classList.remove("active"));
+}
+
+function updateState(){
+    rcVal.innerText = read_count;
+    mutexVal.innerText = mutex;
+    rwVal.innerText = rw_mutex;
+
+    if(rw_mutex===0 && read_count>0)
+        dbStatus.innerHTML="<span class='reader'>READING</span>";
+    else if(rw_mutex===0)
+        dbStatus.innerHTML="<span class='writer'>WRITING</span>";
+    else
+        dbStatus.innerText="FREE";
+}
+
+/* ===== READER STEP ===== */
+function readerStep(){
+    clearHighlight();
+    wStep = 0;
+
+    if(rStep===0){
+        if(mutex===0){ explain.innerText="Reader blocked on mutex"; return; }
+        r1.classList.add("active");
+        mutex--;
+        explain.innerText="Reader executes wait(mutex)";
+    }
+    else if(rStep===1){
+        r2.classList.add("active");
+        read_count++;
+        explain.innerText="Reader increments read_count";
+    }
+    else if(rStep===2){
+        r3.classList.add("active");
+        explain.innerText="Check if this is the first reader";
+    }
+    else if(rStep===3){
+        if(read_count===1){
+            if(rw_mutex===0){ explain.innerText="Reader blocked on rw_mutex"; return; }
+            r4.classList.add("active");
+            rw_mutex--;
+            explain.innerText="First reader locks database (wait rw_mutex)";
+        }
+    }
+    else if(rStep===4){
+        r5.classList.add("active");
+        mutex++;
+        explain.innerText="Reader releases mutex";
+    }
+    else if(rStep===5){
+        r6.classList.add("active");
+        mutex--;
+        explain.innerText="Reader exit section: wait(mutex)";
+    }
+    else if(rStep===6){
+        r7.classList.add("active");
+        read_count--;
+        explain.innerText="Reader decrements read_count";
+    }
+    else if(rStep===7){
+        r8.classList.add("active");
+        explain.innerText="Check if this is last reader";
+    }
+    else if(rStep===8){
+        if(read_count===0){
+            r9.classList.add("active");
+            rw_mutex++;
+            explain.innerText="Last reader releases database";
+        }
+    }
+    else if(rStep===9){
+        r10.classList.add("active");
+        mutex++;
+        explain.innerText="Reader releases mutex";
+        rStep = -1;
+    }
+
+    rStep++;
+    updateState();
+}
+
+/* ===== WRITER STEP ===== */
+function writerStep(){
+    clearHighlight();
+    rStep = 0;
+
+    if(wStep===0){
+        if(rw_mutex===0){ explain.innerText="Writer blocked on rw_mutex (readers active)"; return; }
+        w1.classList.add("active");
+        rw_mutex--;
+        explain.innerText="Writer executes wait(rw_mutex)";
+    }
+    else if(wStep===1){
+        w2.classList.add("active");
+        rw_mutex++;
+        explain.innerText="Writer releases database";
+        wStep = -1;
+    }
+
+    wStep++;
+    updateState();
+}
+
+/* ===== RESET ===== */
+function resetAll(){
+    read_count = 0;
+    mutex = 1;
+    rw_mutex = 1;
+    rStep = 0;
+    wStep = 0;
+    clearHighlight();
+    explain.innerText="System reset to textbook initial state";
+    updateState();
+}
+
+updateState();
+</script>
+
+</body>
+</html>

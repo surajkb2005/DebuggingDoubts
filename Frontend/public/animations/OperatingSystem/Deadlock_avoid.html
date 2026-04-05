@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Banker's Algorithm: Resource Manager</title>
+    <style>
+        :root {
+            --bg: #1e272e;
+            --card-bg: #2f3640;
+            --text: #f5f6fa;
+            --accent: #00a8ff;
+            --max-bg: #353b48;
+            --alloc-color: #4cd137;
+            --need-color: #e84118;
+            --avail-color: #fbc531;
+            --error-color: #ff4757;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 5px 0;
+            color: var(--accent);
+        }
+
+        /* --- DASHBOARD --- */
+        .dashboard-container {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .dashboard {
+            background: rgba(47, 54, 64, 0.95);
+            padding: 10px 40px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            border: 3px solid var(--avail-color);
+            text-align: center;
+            min-width: 250px;
+        }
+
+        .avail-label {
+            font-size: 1rem;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .avail-value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--avail-color);
+            display: block;
+            line-height: 1;
+        }
+
+        .avail-anim {
+            animation: pop 0.3s ease-in-out;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.3);
+                color: #fff;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* --- STATUS MESSAGE BAR --- */
+        #status-bar {
+            margin-top: 10px;
+            background: #222;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            min-height: 24px;
+            transition: 0.3s;
+            border: 1px solid #444;
+            color: #aaa;
+        }
+
+        .status-error {
+            background: rgba(255, 71, 87, 0.2) !important;
+            color: var(--error-color) !important;
+            border-color: var(--error-color) !important;
+            animation: shake 0.4s;
+        }
+
+        .status-success {
+            color: var(--alloc-color) !important;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        /* --- VISUALIZER CONTAINER --- */
+        .visualizer-container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 1000px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-top: 5px solid var(--alloc-color);
+        }
+
+        .vis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        /* PROCESS ROW */
+        .process-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            transition: opacity 0.5s;
+        }
+
+        .proc-done {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(0.8);
+            position: relative;
+        }
+
+        .proc-done::after {
+            content: "RESOURCES RETURNED";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--avail-color);
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-shadow: 0 2px 5px #000;
+            white-space: nowrap;
+        }
+
+        .proc-label {
+            width: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--accent);
+            text-align: center;
+        }
+
+        .proc-info {
+            width: 80px;
+            text-align: right;
+            font-family: monospace;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        /* BAR CHART */
+        .bar-track-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .bar-track {
+            height: 40px;
+            background: var(--max-bg);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            border: 2px solid #555;
+            transition: width 0.5s ease-out;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: var(--alloc-color);
+            width: 0%;
+            transition: width 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e272e;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .bar-empty {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7f8fa6;
+            font-size: 0.8rem;
+        }
+
+        /* BUTTONS & MATH */
+        .btn-group {
+            display: flex;
+            align-items: center;
+            width: 120px;
+            justify-content: flex-end;
+        }
+
+        .btn-alloc {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .btn-alloc:hover {
+            background: #0097e6;
+            transform: translateY(-2px);
+        }
+
+        .btn-alloc:active {
+            transform: translateY(0);
+        }
+
+        .btn-alloc:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .math-display {
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: #dcdde1;
+            background: #222;
+            padding: 5px 10px;
+            border-radius: 4px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .m-alloc {
+            color: var(--alloc-color);
+        }
+
+        .m-need {
+            color: var(--need-color);
+        }
+
+        .note-box {
+            text-align: center;
+            margin-top: 30px;
+            color: #888;
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .back-home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .back-home-btn:hover {
+            transform: translateX(-3px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        }
+
+        .back-home-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- <button class="back-home-btn" onclick="goHome()">
+        ⬅ Back to Home
+    </button> -->
+
+    <div class="dashboard-container">
+        <div class="dashboard">
+            <span class="avail-label">Available Resources</span>
+            <span class="avail-value" id="avail-display">0</span>
+        </div>
+        <div id="status-bar">System Ready. Select a process to allocate.</div>
+    </div>
+
+    <h1>Resource Allocation Simulation</h1>
+
+    <div class="visualizer-container">
+        <div class="vis-header">
+            <div style="font-size: 1.2rem; font-weight: bold;">Process Queue</div>
+            <div style="font-size: 0.9rem; color: #aaa;">Click buttons to allocate 1 unit at a time</div>
+        </div>
+
+        <div id="processes-wrapper"></div>
+
+        <div class="note-box">
+            <strong>The Banker's Logic:</strong><br>
+            If you give resources to the right process (Need &le; Available), it finishes and returns
+            <strong>Max</strong> resources back to the pool, <span style="color:var(--avail-color)">INCREASING</span>
+            total availability.
+        </div>
+
+        <button onclick="location.reload()"
+            style="margin-top:20px; padding:10px 20px; background:#444; color:white; border:none; border-radius:5px; cursor:pointer;">Restart
+            Simulation</button>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        const SYSTEM_TOTAL = 20;
+
+        const processes = [
+            { id: 'P0', max: 10, currentAlloc: 4 }, // Needs 6
+            { id: 'P1', max: 5, currentAlloc: 2 }, // Needs 3
+            { id: 'P2', max: 8, currentAlloc: 4 }, // Needs 4
+            { id: 'P3', max: 4, currentAlloc: 1 }, // Needs 3 (Smallest need)
+            { id: 'P4', max: 12, currentAlloc: 3 }  // Needs 9
+        ];
+
+        let highestMax = 12;
+        let currentAvailable = 0;
+
+        function goHome() {
+            window.history.back(); // change if needed
+            // OR use: window.location.href = "./"; 
+        }
+
+        // --- 2. INIT LOGIC ---
+        function init() {
+            let totalAllocated = processes.reduce((sum, p) => sum + p.currentAlloc, 0);
+            currentAvailable = SYSTEM_TOTAL - totalAllocated;
+
+            updateAvailableDisplay();
+            renderRows();
+        }
+
+        function updateAvailableDisplay() {
+            const disp = document.getElementById('avail-display');
+            disp.innerText = currentAvailable;
+
+            disp.classList.remove('avail-anim');
+            void disp.offsetWidth;
+            disp.classList.add('avail-anim');
+        }
+
+        function setStatus(msg, type = 'normal') {
+            const bar = document.getElementById('status-bar');
+            bar.innerText = msg;
+            bar.className = ''; // reset
+            if (type === 'error') bar.classList.add('status-error');
+            if (type === 'success') bar.classList.add('status-success');
+        }
+
+        // --- 3. RENDER ROWS ---
+        function renderRows() {
+            const container = document.getElementById('processes-wrapper');
+            container.innerHTML = '';
+
+            processes.forEach((p, idx) => {
+                const isDone = p.currentAlloc === p.max;
+                const relativeWidth = (p.max / highestMax) * 100;
+                const pct = (p.currentAlloc / p.max) * 100;
+                const need = p.max - p.currentAlloc;
+
+                const html = `
+                    <div class="process-row ${isDone ? 'proc-done' : ''}" id="row-${idx}">
+                        <div class="proc-label">${p.id}</div>
+                        <div class="proc-info">Max: ${p.max}</div>
+                        
+                        <div class="bar-track-container">
+                            <div class="bar-track" style="width: ${relativeWidth}%">
+                                <div class="bar-fill" style="width:${pct}%; background-color: ${isDone ? '#00b894' : '#4cd137'}">
+                                    ${p.currentAlloc > 0 ? p.currentAlloc : ''}
+                                </div>
+                                <div class="bar-empty">
+                                    ${isDone ? 'Done' : need}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="math-display">
+                            Need: <span class="${isDone ? 'm-alloc' : 'm-need'}">${need}</span>
+                        </div>
+
+                        <div class="btn-group">
+                            <button class="btn-alloc" 
+                                onclick="allocateOne(${idx})" 
+                                ${isDone ? 'disabled' : ''}>
+                                Alloc +1
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        // --- 4. INTERACTION LOGIC (BUTTON CONTROLLED) ---
+        function allocateOne(idx) {
+            // Check Availability
+            if (currentAvailable <= 0) {
+                setStatus(`⚠️ NO AVAILABLE RESOURCES! Cannot allocate to ${processes[idx].id}`, 'error');
+                return;
+            }
+
+            // Perform Allocation
+            processes[idx].currentAlloc++;
+            currentAvailable--;
+
+            setStatus(`Allocated 1 unit to ${processes[idx].id}.`, 'normal');
+            updateAvailableDisplay();
+
+            // Check Completion
+            if (processes[idx].currentAlloc === processes[idx].max) {
+                processFinished(idx);
+            } else {
+                renderRows();
+            }
+        }
+
+        function processFinished(idx) {
+            renderRows(); // Show full bar
+            setStatus(`${processes[idx].id} Finished! Returning resources...`, 'success');
+
+            setTimeout(() => {
+                const p = processes[idx];
+                const returnedAmount = p.max;
+                currentAvailable += returnedAmount;
+
+                setStatus(`${processes[idx].id} returned ${p.max} resources. Available increased!`, 'success');
+                updateAvailableDisplay();
+            }, 500);
+        }
+
+        init();
+
+    </script>
+</body>
+
+</html>

@@ -1,6 +1,6 @@
 //Frontend\src\App.jsx
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Videos from "./pages/Videos";
 import VideoDetails from "./pages/VideoDetails";
 import Navbar from "./components/Navbar";
@@ -10,6 +10,7 @@ import ProtectedRoute from "./Auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import AdminRoute from "./components/AdminRoute";
+import Animations from "./pages/Animations";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Videos />} />
+          <Route path="/animations" element={<Animations />} />
           <Route path="/admin" element={
             <AdminRoute>
               <Admin />

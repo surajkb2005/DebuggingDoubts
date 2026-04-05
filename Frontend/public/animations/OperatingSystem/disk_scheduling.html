@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disk Scheduling</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        h2 {
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        /* Configuration Panel */
+        .config-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 800px;
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        /* FIXED CHECKBOX GROUP */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #e8f5e9;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #c8e6c9;
+            user-select: none;
+            /* Prevents text selection */
+        }
+
+        /* Styling the checkbox to look larger */
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #27ae60;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            color: #2e7d32;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* Algorithm Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s, opacity 0.2s;
+            opacity: 0.9;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 1;
+        }
+
+        .btn-FCFS {
+            background-color: #3498db;
+        }
+
+        .btn-SSTF {
+            background-color: #27ae60;
+        }
+
+        .btn-SCAN {
+            background-color: #e67e22;
+        }
+
+        .btn-CSCAN {
+            background-color: #9b59b6;
+        }
+
+        .btn-LOOK {
+            background-color: #e74c3c;
+        }
+
+        .btn-CLOOK {
+            background-color: #16a085;
+        }
+
+        .btn-CLEAR {
+            background-color: #7f8c8d;
+        }
+
+        /* Visualization Area */
+        .canvas-container {
+            position: relative;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            border: 1px solid #eee;
+            background: #fff;
+        }
+
+        /* Stats Legend */
+        .legend {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            width: 800px;
+        }
+
+        .legend-item {
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .back-home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .back-home-btn:hover {
+            transform: translateX(-3px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        }
+
+        .back-home-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <button class="back-home-btn" onclick="goHome()">
+    ⬅ Back to Home
+</button> -->
+
+    <h2>Disk Scheduling Visualization</h2>
+
+    <div class="config-panel">
+        <div class="row">
+            <div class="input-group" style="flex: 3;">
+                <label>Request Queue (Comma Separated)</label>
+                <input type="text" id="input-queue" value="98, 183, 37, 122, 14, 124, 65, 67">
+            </div>
+            <div class="input-group">
+                <label>Start Head</label>
+                <input type="number" id="input-start" value="53">
+            </div>
+            <div class="input-group">
+                <label>Disk Size</label>
+                <input type="number" id="input-size" value="200">
+            </div>
+        </div>
+
+        <div class="row" style="justify-content: space-between;">
+            <div class="input-group" style="max-width: 200px;">
+                <label>Direction (SCAN/LOOK)</label>
+                <select id="input-direction">
+                    <option value="right">Right (Increasing)</option>
+                    <option value="left">Left (Decreasing)</option>
+                </select>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="chk-compare" checked>
+                <label for="chk-compare">Compare Mode (Keep Previous Traces)</label>
+            </div>
+
+            <button class="btn-CLEAR" onclick="clearAll()">Clear Canvas</button>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-FCFS" onclick="runAlgo('FCFS')">FCFS</button>
+            <button class="btn-SSTF" onclick="runAlgo('SSTF')">SSTF</button>
+            <button class="btn-SCAN" onclick="runAlgo('SCAN')">SCAN</button>
+            <button class="btn-CSCAN" onclick="runAlgo('CSCAN')">C-SCAN</button>
+            <button class="btn-LOOK" onclick="runAlgo('LOOK')">LOOK</button>
+            <button class="btn-CLOOK" onclick="runAlgo('CLOOK')">C-LOOK</button>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="diskCanvas" width="800" height="450"></canvas>
+    </div>
+
+    <div class="legend" id="legend-container">
+    </div>
+
+    <script>
+        const canvas = document.getElementById('diskCanvas');
+        const ctx = canvas.getContext('2d');
+        const legendContainer = document.getElementById('legend-container');
+
+        // --- STATE MANAGEMENT ---
+        let history = []; // Stores completed runs
+        let currentRun = null; // Stores animating run
+        let animationId;
+
+        const COLORS = {
+            'FCFS': '#3498db',  // Blue
+            'SSTF': '#27ae60',  // Green
+            'SCAN': '#e67e22',  // Orange
+            'CSCAN': '#9b59b6', // Purple
+            'LOOK': '#e74c3c',  // Red
+            'CLOOK': '#16a085'  // Teal
+        };
+
+        // --- ALGORITHMS ---
+        function getBaseData() {
+            const qStr = document.getElementById('input-queue').value;
+            const queue = qStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+            const start = parseInt(document.getElementById('input-start').value);
+            const size = parseInt(document.getElementById('input-size').value);
+            const direction = document.getElementById('input-direction').value;
+            return { queue, start, size, direction };
+        }
+
+        // 1. FCFS
+        function algoFCFS(queue, start) { return [start, ...queue]; }
+
+        // 2. SSTF
+        function algoSSTF(queue, start) {
+            let q = [...queue];
+            let current = start;
+            let path = [start];
+            while (q.length > 0) {
+                let minIdx = -1, minDist = Infinity;
+                for (let i = 0; i < q.length; i++) {
+                    let dist = Math.abs(q[i] - current);
+                    if (dist < minDist) { minDist = dist; minIdx = i; }
+                }
+                current = q[minIdx];
+                path.push(current);
+                q.splice(minIdx, 1);
+            }
+            return path;
+        }
+
+        // 3. SCAN
+        function algoSCAN(queue, start, size, direction) {
+            let path = [start];
+            let left = queue.filter(v => v < start).sort((a, b) => b - a);
+            let right = queue.filter(v => v >= start).sort((a, b) => a - b);
+            if (direction === 'left') {
+                path = path.concat(left);
+                path.push(0);
+                path = path.concat(right);
+            } else {
+                path = path.concat(right);
+                path.push(size - 1);
+                path = path.concat(left);
+            }
+            return path;
+        }
+
+        // 4. C-SCAN
+        function algoCSCAN(queue, start, size, direction) {
+            let path = [start];
+            let left = queue.filter(v => v < start).sort((a, b) => a - b);
+            let right = queue.filter(v => v >= start).sort((a, b) => a - b);
+            if (direction === 'right') {
+                path = path.concat(right);
+                path.push(size - 1); path.push(0);
+                path = path.concat(left);
+            } else {
+                let leftDesc = queue.filter(v => v < start).sort((a, b) => b - a);
+                let rightDesc = queue.filter(v => v >= start).sort((a, b) => b - a);
+                path = path.concat(leftDesc);
+                path.push(0); path.push(size - 1);
+                path = path.concat(rightDesc);
+            }
+            return path;
+        }
+
+        // 5. LOOK
+        function algoLOOK(queue, start, size, direction) {
+            let path = [start];
+            let left = queue.filter(v => v < start).sort((a, b) => b - a);
+            let right = queue.filter(v => v >= start).sort((a, b) => a - b);
+            if (direction === 'left') {
+                path = path.concat(left);
+                path = path.concat(right);
+            } else {
+                path = path.concat(right);
+                path = path.concat(left);
+            }
+            return path;
+        }
+
+        // 6. C-LOOK
+        function algoCLOOK(queue, start, size, direction) {
+            let path = [start];
+            let left = queue.filter(v => v < start).sort((a, b) => a - b);
+            let right = queue.filter(v => v >= start).sort((a, b) => a - b);
+            if (direction === 'right') {
+                path = path.concat(right);
+                path = path.concat(left);
+            } else {
+                let leftDesc = queue.filter(v => v < start).sort((a, b) => b - a);
+                let rightDesc = queue.filter(v => v >= start).sort((a, b) => b - a);
+                path = path.concat(leftDesc);
+                path = path.concat(rightDesc);
+            }
+            return path;
+        }
+
+        // --- CORE VISUALIZATION LOGIC ---
+
+        function runAlgo(name) {
+            const data = getBaseData();
+            let path = [];
+
+            switch (name) {
+                case 'FCFS': path = algoFCFS(data.queue, data.start); break;
+                case 'SSTF': path = algoSSTF(data.queue, data.start); break;
+                case 'SCAN': path = algoSCAN(data.queue, data.start, data.size, data.direction); break;
+                case 'CSCAN': path = algoCSCAN(data.queue, data.start, data.size, data.direction); break;
+                case 'LOOK': path = algoLOOK(data.queue, data.start, data.size, data.direction); break;
+                case 'CLOOK': path = algoCLOOK(data.queue, data.start, data.size, data.direction); break;
+            }
+
+            // Calculate Seek Movement
+            let totalSeek = 0;
+            for (let i = 0; i < path.length - 1; i++) {
+                totalSeek += Math.abs(path[i] - path[i + 1]);
+            }
+
+            // CRITICAL: Handle Compare Mode Logic
+            const isCompare = document.getElementById('chk-compare').checked;
+
+            if (!isCompare) {
+                // If compare is OFF, we wipe the history array completely
+                history = [];
+            } else {
+                // If compare is ON, check if we already have this specific Algo in history
+                // If yes, remove the old one so we don't stack duplicate FCFS lines
+                history = history.filter(item => item.name !== name);
+            }
+
+            // If an animation is currently running, finish it instantly and save to history
+            if (currentRun) {
+                history.push(currentRun);
+            }
+
+            // Setup the new run
+            currentRun = {
+                name: name,
+                path: path,
+                color: COLORS[name],
+                seekTime: totalSeek,
+                progress: 0,
+                diskSize: data.size
+            };
+
+            updateLegend();
+
+            // Start Animation Loop
+            if (animationId) cancelAnimationFrame(animationId);
+            animate();
+        }
+
+        function goHome() {
+            window.location.href = "../../index.html";
+        }
+
+        function clearAll() {
+            history = [];
+            currentRun = null;
+            if (animationId) cancelAnimationFrame(animationId);
+            updateLegend();
+            drawFrame(); // Draw empty grid
+        }
+
+        function updateLegend() {
+            legendContainer.innerHTML = '';
+            // Combine history and current run for the legend
+            const allItems = [...history];
+            if (currentRun) allItems.push(currentRun);
+
+            allItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                // Using darker border for readability
+                div.style.borderColor = item.color;
+                div.style.color = '#333';
+                div.innerHTML = `<span class="dot" style="background:${item.color}"></span> ${item.name}: ${item.seekTime}`;
+                legendContainer.appendChild(div);
+            });
+        }
+
+        function animate() {
+            if (!currentRun) return;
+
+            // Speed of animation
+            currentRun.progress += 0.04;
+
+            // Check if finished
+            if (currentRun.progress >= currentRun.path.length - 1) {
+                currentRun.progress = currentRun.path.length - 1; // Clamp to end
+                history.push(currentRun); // Save to history
+                currentRun = null; // Clear active run
+                drawFrame(); // Final static draw
+                return;
+            }
+
+            drawFrame();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function drawFrame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const diskSize = parseInt(document.getElementById('input-size').value);
+
+            drawGrid(diskSize);
+
+            // 1. Draw History (Completed Runs)
+            // We draw these slightly thinner or transparent? 
+            // For now, standard visibility is best for comparison.
+            history.forEach(run => {
+                drawPath(run.path, run.color, run.path.length - 1, diskSize, false);
+            });
+
+            // 2. Draw Current Animation
+            if (currentRun) {
+                drawPath(currentRun.path, currentRun.color, currentRun.progress, diskSize, true);
+            }
+        }
+
+        function drawPath(path, color, progressIndex, diskSize, isAnimating) {
+            const padX = 40, padY = 40;
+            const w = canvas.width - padX * 2;
+            const h = canvas.height - padY * 2;
+
+            // Dynamic step height calculation
+            // We find the max length among all visible paths to scale Y-axis comfortably?
+            // For simplicity in this version, we stick to fixed scale based on THIS path length
+            // or a fixed count (e.g. 15 steps) to prevent squashing.
+            // Let's use a fixed step size logic to ensure alignment if multiple are drawn?
+            // Actually, usually in these diagrams, time (steps) flows downwards. 
+            // If we want to compare, the Y-axis steps must align. 
+            // We will assume a max capacity of 20 steps for the Y axis.
+
+            const maxSteps = 12;
+            const stepY = h / maxSteps;
+
+            ctx.lineWidth = isAnimating ? 3 : 2;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = isAnimating ? 1.0 : 0.6; // Make history slightly transparent
+
+            ctx.beginPath();
+
+            // Move to first point
+            let startX = padX + (path[0] / (diskSize - 1)) * w;
+            ctx.moveTo(startX, padY);
+
+            // Draw full segments
+            const maxIdx = Math.floor(progressIndex);
+
+            for (let i = 1; i <= maxIdx; i++) {
+                let val = path[i];
+                let x = padX + (val / (diskSize - 1)) * w;
+                let y = padY + (i * stepY);
+                ctx.lineTo(x, y);
+            }
+
+            // Draw partial segment (Interpolation)
+            if (isAnimating && maxIdx < path.length - 1) {
+                let nextIdx = maxIdx + 1;
+                let p1 = path[maxIdx];
+                let p2 = path[nextIdx];
+
+                let x1 = padX + (p1 / (diskSize - 1)) * w;
+                let y1 = padY + (maxIdx * stepY);
+
+                let x2 = padX + (p2 / (diskSize - 1)) * w;
+                let y2 = padY + (nextIdx * stepY);
+
+                let fraction = progressIndex - maxIdx;
+                let curX = x1 + (x2 - x1) * fraction;
+                let curY = y1 + (y2 - y1) * fraction;
+
+                ctx.lineTo(curX, curY);
+            }
+
+            ctx.stroke();
+            ctx.globalAlpha = 1.0; // Reset alpha
+
+            // Draw Dots
+            for (let i = 0; i <= maxIdx + (isAnimating ? 0 : 0); i++) {
+                let val = path[i];
+                let x = padX + (val / (diskSize - 1)) * w;
+                let y = padY + (i * stepY);
+
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw Text only if it's the active run OR the very start
+                // if(isAnimating && (i === maxIdx || i===0)) {
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.fillText(val, x + 8, y + 3);
+                // }
+            }
+        }
+
+        function drawGrid(diskSize) {
+            const padX = 40, padY = 40;
+            const w = canvas.width - padX * 2;
+            const h = canvas.height - padY * 2;
+
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            // Vertical Grid Lines
+            for (let i = 0; i <= 10; i++) {
+                let x = padX + (w * (i / 10));
+                ctx.moveTo(x, padY - 10);
+                ctx.lineTo(x, padY + h + 20);
+
+                // Labels
+                let val = Math.round((diskSize - 1) * (i / 10));
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.font = '10px Arial';
+                ctx.fillText(val, x, padY - 15);
+            }
+            ctx.stroke();
+        }
+
+        // Init
+        drawFrame();
+
+    </script>
+</body>
+
+</html>

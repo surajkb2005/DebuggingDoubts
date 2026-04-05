@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bounded Buffer – Step by Step Visualization</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Segoe UI, sans-serif;
+    background:#020617;
+    color:#e5e7eb;
+}
+h1{
+    text-align:center;
+    color:#38bdf8;
+    margin:10px 0;
+}
+.container{
+    display:grid;
+    grid-template-columns: 1.1fr 1fr;
+    height:90vh;
+}
+
+/* ---------- CODE PANEL ---------- */
+.code{
+    padding:20px;
+    border-right:3px solid #38bdf8;
+}
+h2{ color:#38bdf8; }
+
+pre{
+    background:#020617;
+    border:1px solid #38bdf8;
+    border-radius:8px;
+    padding:12px;
+    line-height:1.6;
+    font-size:15px;
+}
+.line{
+    display:block;
+    padding:2px 6px;
+}
+.active{
+    background:#164e63;
+    border-left:4px solid #38bdf8;
+}
+
+/* ---------- VISUAL PANEL ---------- */
+.visual{
+    padding:20px;
+    text-align:center;
+}
+.state{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:10px;
+    margin-bottom:20px;
+}
+.box{
+    border:2px solid #38bdf8;
+    border-radius:8px;
+    padding:10px;
+}
+.buffer{
+    display:flex;
+    justify-content:center;
+    margin:20px 0;
+}
+.slot{
+    width:55px;
+    height:55px;
+    border:2px solid #38bdf8;
+    margin:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.filled{
+    background:#22c55e;
+    color:black;
+    font-weight:bold;
+}
+.controls button{
+    padding:10px 18px;
+    margin:8px;
+    font-weight:bold;
+    border:none;
+    border-radius:6px;
+    background:#38bdf8;
+    cursor:pointer;
+}
+.controls button:hover{
+    background:#0ea5e9;
+}
+#explain{
+    margin-top:15px;
+    min-height:40px;
+    font-style:italic;
+    color:#cbd5f5;
+}
+</style>
+</head>
+
+<body>
+
+<h1>5.7.1 Bounded Buffer (Producer–Consumer)</h1>
+
+<div class="container">
+
+<!-- ================= CODE SIDE ================= -->
+<div class="code">
+<h2>Producer Code (Textbook)</h2>
+<pre>
+<span class="line" id="p1">wait(empty);</span>
+<span class="line" id="p2">wait(mutex);</span>
+<span class="line" id="p3">add item to buffer;</span>
+<span class="line" id="p4">signal(mutex);</span>
+<span class="line" id="p5">signal(full);</span>
+</pre>
+
+<h2>Consumer Code (Textbook)</h2>
+<pre>
+<span class="line" id="c1">wait(full);</span>
+<span class="line" id="c2">wait(mutex);</span>
+<span class="line" id="c3">remove item from buffer;</span>
+<span class="line" id="c4">signal(mutex);</span>
+<span class="line" id="c5">signal(empty);</span>
+</pre>
+</div>
+
+<!-- ================= VISUAL SIDE ================= -->
+<div class="visual">
+
+<div class="state">
+<div class="box">
+<b>Semaphore: mutex</b>
+<p id="mutexVal">1</p>
+</div>
+<div class="box">
+<b>Semaphore: empty</b>
+<p id="emptyVal">5</p>
+</div>
+<div class="box">
+<b>Semaphore: full</b>
+<p id="fullVal">0</p>
+</div>
+</div>
+
+<h3>Shared Buffer (size = 5)</h3>
+<div class="buffer" id="buffer"></div>
+
+<div class="controls">
+<button onclick="producerStep()">▶ Producer Next Step</button>
+<button onclick="consumerStep()">▶ Consumer Next Step</button>
+<button onclick="resetAll()">🔄 Reset</button>
+</div>
+
+<p id="explain"></p>
+
+</div>
+</div>
+
+<script>
+/* ====== TEXTBOOK VARIABLES ====== */
+const N = 5;
+let mutex = 1;
+let empty = N;
+let full = 0;
+let bufferCount = 0;
+
+/* ====== STEP TRACKERS ====== */
+let pStep = 0;
+let cStep = 0;
+
+/* ====== UI REFERENCES ====== */
+const bufferDiv = document.getElementById("buffer");
+
+function drawBuffer(){
+    bufferDiv.innerHTML="";
+    for(let i=0;i<N;i++){
+        let d=document.createElement("div");
+        d.className="slot";
+        if(i<bufferCount){
+            d.classList.add("filled");
+            d.innerText="ITEM";
+        }
+        bufferDiv.appendChild(d);
+    }
+    mutexVal.innerText = mutex;
+    emptyVal.innerText = empty;
+    fullVal.innerText = full;
+}
+
+function clearHighlight(){
+    document.querySelectorAll(".line")
+        .forEach(l=>l.classList.remove("active"));
+}
+
+/* ====== PRODUCER STEP ====== */
+function producerStep(){
+    clearHighlight();
+    cStep=0;
+
+    if(pStep===0){
+        if(empty<=0){ explain.innerText="Buffer full → Producer blocked"; return; }
+        p1.classList.add("active");
+        empty--;
+        explain.innerText="Producer executes wait(empty)";
+    }
+    else if(pStep===1){
+        p2.classList.add("active");
+        mutex--;
+        explain.innerText="Producer executes wait(mutex)";
+    }
+    else if(pStep===2){
+        p3.classList.add("active");
+        bufferCount++;
+        explain.innerText="Producer adds item to buffer";
+    }
+    else if(pStep===3){
+        p4.classList.add("active");
+        mutex++;
+        explain.innerText="Producer executes signal(mutex)";
+    }
+    else if(pStep===4){
+        p5.classList.add("active");
+        full++;
+        explain.innerText="Producer executes signal(full)";
+        pStep=-1;
+    }
+    pStep++;
+    drawBuffer();
+}
+
+/* ====== CONSUMER STEP ====== */
+function consumerStep(){
+    clearHighlight();
+    pStep=0;
+
+    if(cStep===0){
+        if(full<=0){ explain.innerText="Buffer empty → Consumer blocked"; return; }
+        c1.classList.add("active");
+        full--;
+        explain.innerText="Consumer executes wait(full)";
+    }
+    else if(cStep===1){
+        c2.classList.add("active");
+        mutex--;
+        explain.innerText="Consumer executes wait(mutex)";
+    }
+    else if(cStep===2){
+        c3.classList.add("active");
+        bufferCount--;
+        explain.innerText="Consumer removes item from buffer";
+    }
+    else if(cStep===3){
+        c4.classList.add("active");
+        mutex++;
+        explain.innerText="Consumer executes signal(mutex)";
+    }
+    else if(cStep===4){
+        c5.classList.add("active");
+        empty++;
+        explain.innerText="Consumer executes signal(empty)";
+        cStep=-1;
+    }
+    cStep++;
+    drawBuffer();
+}
+
+/* ====== RESET ====== */
+function resetAll(){
+    mutex=1; empty=N; full=0; bufferCount=0;
+    pStep=0; cStep=0;
+    clearHighlight();
+    explain.innerText="System reset to initial textbook state";
+    drawBuffer();
+}
+
+drawBuffer();
+</script>
+
+</body>
+</html>
