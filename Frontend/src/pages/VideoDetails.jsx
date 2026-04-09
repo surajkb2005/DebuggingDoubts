@@ -10,12 +10,13 @@ export default function VideoDetails() {
 
     const handleLike = async () => {
         const { data } = await axios.put(
-            `http://localhost:5000/api/videos/${id}/like`
+            `/videos/${id}/like`
         );
 
-        setVideo((prev) => ({
+        setVideo(prev => ({
             ...prev,
-            likes: data.likes
+            likes: data.likes,
+            liked: data.liked
         }));
     };
 
@@ -69,10 +70,12 @@ export default function VideoDetails() {
                         {video.title}
                     </h1>
                     <div className="flex items-center gap-6 mb-6">
-
                         <button
                             onClick={handleLike}
-                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                            className={`px-4 py-2 rounded-lg transition-all duration-300 ${video.liked
+                                    ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                }`}
                         >
                             👍 Like ({video.likes})
                         </button>
@@ -124,6 +127,6 @@ export default function VideoDetails() {
 
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

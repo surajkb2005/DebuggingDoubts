@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/", getAllVideos);
 router.post("/", protect, adminOnly, createVideo);
-router.put("/:id/like", likeVideo);
+router.put("/:id/like", protect, likeVideo);
 router.post("/:id/comment", protect, addComment);
 router.get("/:id", protect, getVideoById);
 

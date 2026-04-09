@@ -13,7 +13,7 @@ export const getAllVideos = async (req, res) => {
 
 // CREATE new video
 export const createVideo = async (req, res) => {
-  try { 
+  try {
     const newVideo = new Video(req.body);
     const savedVideo = await newVideo.save();
     res.status(201).json(savedVideo);
@@ -59,10 +59,27 @@ export const likeVideo = async (req, res) => {
       return res.status(404).json({ message: "Video not found" });
     }
 
-    video.likes += 1;
+    const userId = req.user.id;
+
+    // Check if already liked
+    if (video.likedBy.includes(userId)) {
+      // UNLIKE (toggle behavior)
+      video.likedBy = video.likedBy.filter(
+        (id) => id.toString() !== userId
+      );
+      video.likes -= 1;
+    } else {
+      // LIKE
+      video.likedBy.push(userId);
+      video.likes += 1;
+    }
+
     await video.save();
 
-    res.status(200).json({ likes: video.likes });
+    res.status(200).json({
+      likes: video.likes,
+      liked: video.likedBy.includes(userId)
+    });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
