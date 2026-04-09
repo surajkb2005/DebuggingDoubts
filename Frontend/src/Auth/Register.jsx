@@ -49,125 +49,44 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-gray-950 text-white">
+        <div className="min-h-screen flex items-center justify-center 
+  bg-gradient-to-br from-[#0f172a] via-[#0b1a3a] to-[#022c22] px-4">
 
-            {/* LEFT SIDE - Branding */}
-            <div className="hidden md:flex md:w-1/2 flex-col justify-center px-16 bg-gradient-to-br from-blue-600 to-purple-700">
-                <h1 className="text-4xl font-bold mb-4">
-                    Join Debugging Doubts
-                </h1>
+            <div className="w-full max-w-5xl rounded-3xl 
+    bg-white/10 backdrop-blur-xl border border-white/10 
+    shadow-2xl p-6 md:p-10 flex flex-col md:flex-row gap-8">
 
-                <p className="text-lg mb-6">
-                    Level up your coding skills with structured CSE learning.
-                </p>
+                {/* LEFT SIDE */}
+                <div className="flex-1 flex flex-col justify-center text-white">
+                    <h1 className="text-3xl font-bold mb-2">
+                        Debugging Doubts 🚀
+                    </h1>
 
-                <ul className="space-y-3 text-base">
-                    <li>✔ Watch structured CSE tutorials</li>
-                    <li>✔ Ask doubts on every video</li>
-                    <li>✔ Track your learning progress</li>
-                    <li>✔ Connect with fellow learners</li>
-                </ul>
-            </div>
+                    <p className="text-gray-300 mb-6">
+                        Your learning platform for mastering Computer Science.
+                    </p>
 
-            {/* RIGHT SIDE - Form */}
-            <div className="flex flex-1 items-center justify-center px-6 py-12">
-                <form
-                    onSubmit={handleSubmit}
-                    className="w-full max-w-md bg-gray-900 p-8 rounded-xl shadow-lg"
-                >
-                    <h2 className="text-3xl font-bold mb-2">
-                        Create Your Account
+                    <div className="space-y-2 text-sm text-gray-400">
+                        <p>✔ Watch tutorials</p>
+                        <p>✔ Solve doubts instantly</p>
+                        <p>✔ Track your progress</p>
+                    </div>
+                </div>
+
+                {/* RIGHT SIDE - LOGIN FORM */}
+                <form className="flex-1 bg-white/10 backdrop-blur-lg 
+p-6 rounded-2xl border border-white/10">
+
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                        Create Account
                     </h2>
 
-                    <p className="text-gray-400 mb-6">
-                        Start your journey toward mastering Computer Science.
-                    </p>
+                    <input type="text" placeholder="Full Name" className="input" />
+                    <input type="email" placeholder="Email" className="input" />
+                    <input type="password" placeholder="Password" className="input" />
+                    <input type="password" placeholder="Confirm Password" className="input" />
 
-                    {error && (
-                        <div className="bg-red-500/20 text-red-400 p-3 rounded mb-4">
-                            {error}
-                        </div>
-                    )}
-
-                    {/* Name */}
-                    <div className="mb-4">
-                        <label className="block mb-1 text-sm">
-                            Full Name
-                        </label>
-                        <input
-                            type="text"
-                            name="name"
-                            required
-                            onChange={handleChange}
-                            className="w-full p-3 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter your full name"
-                        />
-                    </div>
-
-                    {/* Email */}
-                    <div className="mb-4">
-                        <label className="block mb-1 text-sm">
-                            Email Address
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            required
-                            onChange={handleChange}
-                            className="w-full p-3 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter your email address"
-                        />
-                    </div>
-
-                    {/* Password */}
-                    <div className="mb-4">
-                        <label className="block mb-1 text-sm">
-                            Password
-                        </label>
-                        <input
-                            type="password"
-                            name="password"
-                            required
-                            onChange={handleChange}
-                            className="w-full p-3 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Create a strong password"
-                        />
-                    </div>
-
-                    {/* Confirm Password */}
-                    <div className="mb-6">
-                        <label className="block mb-1 text-sm">
-                            Confirm Password
-                        </label>
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            required
-                            onChange={handleChange}
-                            className="w-full p-3 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Re-enter your password"
-                        />
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 transition duration-200 py-3 rounded font-semibold"
-                    >
-                        {loading ? "Creating Account..." : "Create Account"}
-                    </button>
-
-                    {/* Footer */}
-                    <p className="text-gray-400 text-sm mt-6 text-center">
-                        Already have an account?{" "}
-                        <Link
-                            to="/login"
-                            className="text-blue-500 hover:underline"
-                        >
-                            Login
-                        </Link>
-                    </p>
+                    <button className="btn">Create Account</button>
                 </form>
             </div>
         </div>

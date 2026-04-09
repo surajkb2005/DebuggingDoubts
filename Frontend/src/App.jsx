@@ -5,6 +5,7 @@ import Videos from "./pages/Videos";
 import VideoDetails from "./pages/VideoDetails";
 import Navbar from "./components/Navbar";
 import Login from "./Auth/Login";
+import AuthPage from "./Auth/AuthPage";
 import Register from "./Auth/Register";
 import ProtectedRoute from "./Auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -22,6 +23,7 @@ function App() {
       <main className="pt-24">
 
         <Routes>
+          <Route path="/auth" element={<AuthPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Videos />} />

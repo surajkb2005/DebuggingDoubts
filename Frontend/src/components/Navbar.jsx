@@ -67,7 +67,7 @@ const Navbar = () => {
                 Dashboard
               </NavLink>
 
-              {/* 🔥 ADMIN LINK (FIXED) */}
+              {/* ADMIN LINK (FIXED) */}
               {user.role === "admin" && (
                 <NavLink
                   to="/admin"
@@ -93,20 +93,10 @@ const Navbar = () => {
           ) : (
             <>
               <NavLink
-                to="/login"
-                className={({ isActive }) =>
-                  `hover:text-blue-400 transition ${isActive ? "text-blue-500" : "text-gray-300"
-                  }`
-                }
-              >
-                Login
-              </NavLink>
-
-              <NavLink
-                to="/register"
+                to="/auth"
                 className="bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-lg transition active:scale-95"
               >
-                Register
+                Login/Register
               </NavLink>
             </>
           )}
