@@ -8,26 +8,34 @@ import RecommendedSection from "../components/RecommendedSection";
 
 export default function Dashboard() {
 
+
+    const [categories, setCategories] = useState([]);
+    const [progress, setProgress] = useState([]);
+    const [streak, setStreak] = useState(0);
+    const { user } = useAuth();
     const [stats, setStats] = useState({
         watched: 0,
         likes: 0,
         comments: 0
     });
-    const [categories, setCategories] = useState([]);
-    const [progress, setProgress] = useState([]);
-    const [streak, setStreak] = useState(0);
-    const { user } = useAuth();
 
     useEffect(() => {
 
         const fetchStats = async () => {
             const { data } = await axios.get("/dashboard");
             setStats({
-                watched: data.watched
+                watched: data.watched,
+                likes: data.likes,
+                comments: data.comments
             });
 
             setCategories(data.categoryStats);
-            setProgress(data.dailyProgress);
+            const formattedProgress = data.dailyProgress?.map(item => ({
+                date: item._id,
+                count: item.count
+            })) || [];
+            formattedProgress.sort((a, b) => new Date(a.date) - new Date(b.date));
+            setProgress(formattedProgress);
             setStreak(data.streak);
         };
 
@@ -36,7 +44,7 @@ export default function Dashboard() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12">
+        <div className="min-h-screen w-full overflow-x-hidden px-4 md:px-6">
 
             <div className="max-w-7xl mx-auto px-6">
 
@@ -92,10 +100,7 @@ export default function Dashboard() {
 
                     {/* Progress Chart */}
                     <ProgressChart
-                        dataPoints={progress.map(p => ({
-                            date: p._id,
-                            count: p.count
-                        }))}
+                        dataPoints={progress || []}
                     />
 
                     {/* Topic Progress */}

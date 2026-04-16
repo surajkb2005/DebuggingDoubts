@@ -3,7 +3,7 @@ import Activity from "../models/Activity.js";
 
 export const getDashboardStats = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         const watched = await Activity.countDocuments({ userId });
 
@@ -40,6 +40,10 @@ export const getDashboardStats = async (req, res) => {
         ]);
 
         const days = dailyProgress;
+
+        const likes = await Activity.countDocuments({ userId, type: "like" });
+
+        const comments = await Activity.countDocuments({ userId, type: "comment" });
 
         let streak = 0;
         if (!days.length) {
@@ -78,6 +82,8 @@ export const getDashboardStats = async (req, res) => {
 
         res.json({
             watched,
+            likes,
+            comments,
             categoryStats,
             recentActivity,
             dailyProgress,

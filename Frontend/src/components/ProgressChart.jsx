@@ -23,6 +23,8 @@ ChartJS.register(
 
 export default function ProgressChart({ dataPoints }) {
 
+    if (!dataPoints || dataPoints.length === 0) return null;
+
     const data = {
         labels: dataPoints.map(d => d.date),
         datasets: [
@@ -39,9 +41,7 @@ export default function ProgressChart({ dataPoints }) {
 
     const options = {
         responsive: true,
-        plugins: {
-            legend: { display: false }
-        }
+        maintainAspectRatio: false,
     };
 
     return (
@@ -49,8 +49,11 @@ export default function ProgressChart({ dataPoints }) {
             <h2 className="text-xl font-semibold mb-4">
                 Learning Progress
             </h2>
-
-            <Line data={data} options={options} />
+            <div className="w-full overflow-x-auto">
+                <div className="w-full h-[300px] relative">
+                    <Line data={data} options={options} />
+                </div>
+            </div>
         </div>
     );
 }

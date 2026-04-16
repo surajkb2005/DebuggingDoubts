@@ -7,6 +7,7 @@ export default function VideoDetails() {
     const { id } = useParams();
     const [video, setVideo] = useState(null);
     const [commentText, setCommentText] = useState("");
+    const [liked, setLiked] = useState(false);
 
     const handleLike = async () => {
         const { data } = await axios.put(
@@ -18,6 +19,8 @@ export default function VideoDetails() {
             likes: data.likes,
             liked: data.liked
         }));
+
+        setLiked(data.liked);
     };
 
     const handleComment = async () => {
@@ -43,6 +46,8 @@ export default function VideoDetails() {
             );
 
             setVideo(data);
+
+            setLiked(data.liked || false);
         };
 
         fetchVideo();
@@ -72,9 +77,9 @@ export default function VideoDetails() {
                     <div className="flex items-center gap-6 mb-6">
                         <button
                             onClick={handleLike}
-                            className={`px-4 py-2 rounded-lg transition-all duration-300 ${video.liked
-                                    ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
-                                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                            className={`px-4 py-2 rounded-lg transition-all duration-300 ${liked
+                                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
                                 }`}
                         >
                             👍 Like ({video.likes})

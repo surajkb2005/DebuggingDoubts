@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/", getAllVideos);
 router.post("/", protect, adminOnly, createVideo);
 router.put("/:id/like", protect, likeVideo);
-router.post("/:id/comment", protect, addComment);
+router.post("/:id/comments", protect, addComment);
 router.get("/:id", protect, getVideoById);
 
 export default router;

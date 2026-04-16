@@ -37,7 +37,7 @@ export const getVideoById = async (req, res) => {
     // Track learning activity
     if (req.user) {
       await Activity.create({
-        userId: req.user.id,
+        userId: req.user._id,
         videoId: video._id,
         category: video.category
       });
@@ -72,9 +72,18 @@ export const likeVideo = async (req, res) => {
       // LIKE
       video.likedBy.push(userId);
       video.likes += 1;
+
+      await Activity.create({
+        userId: req.user._id,
+        videoId: video._id,
+        category: video.category,
+        type: "like"
+      });
     }
 
     await video.save();
+
+
 
     res.status(200).json({
       likes: video.likes,
@@ -96,6 +105,13 @@ export const addComment = async (req, res) => {
 
     video.comments.push({ text: req.body.text });
     await video.save();
+
+    await Activity.create({
+      userId: req.user._id,
+      videoId: video._id,
+      category: video.category,
+      type: "comment"
+    });
 
     res.status(200).json(video.comments);
 

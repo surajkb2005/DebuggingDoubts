@@ -19,8 +19,13 @@ const activitySchema = new mongoose.Schema({
     watchedAt: {
         type: Date,
         default: Date.now
-    }
+    },
 
+    type: {
+        type: String,
+        enum: ["watch", "like", "comment"],
+        default: "watch"
+    },
 });
 
 export default mongoose.model("Activity", activitySchema);
