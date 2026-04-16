@@ -118,7 +118,7 @@ export default function Dashboard() {
                                     <div className="w-full bg-gray-200 rounded-full h-3">
                                         <div
                                             className="bg-blue-600 h-3 rounded-full"
-                                            style={{ width: `${cat.count * 10}%` }}
+                                            style={{ width: `${Math.min(cat.count, 100)}%` }}
                                         />
                                     </div>
                                 </div>
