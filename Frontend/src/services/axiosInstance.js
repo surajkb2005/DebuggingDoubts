@@ -15,4 +15,16 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
+instance.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem("user");   // clear invalid login
+      window.location.href = "/login";   // force redirect
+      setUser(null);
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default instance;

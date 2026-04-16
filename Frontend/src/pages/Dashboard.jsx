@@ -88,13 +88,6 @@ export default function Dashboard() {
 
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow">
-                    <p className="text-gray-500 text-sm">Learning Streak</p>
-                    <h2 className="text-3xl font-bold text-orange-500">
-                        🔥 {streak} Days
-                    </h2>
-                </div>
-
                 <div className="grid lg:grid-cols-2 gap-8 mb-12">
 
                     {/* Progress Chart */}

@@ -29,45 +29,51 @@ export const getDashboardStats = async (req, res) => {
                     _id: {
                         $dateToString: {
                             format: "%Y-%m-%d",
-                            date: "$watchedAt"
+                            date: "$watchedAt",
+                            timezone: "Asia/Kolkata"
                         }
                     },
                     count: { $sum: 1 }
                 }
             },
-            { $sort: { "_id": 1 } }
+            { $sort: { "_id": -1 } }
         ]);
 
-        const days = await Activity.aggregate([
-            { $match: { userId } },
-            {
-                $group: {
-                    _id: {
-                        $dateToString: {
-                            format: "%Y-%m-%d",
-                            date: "$watchedAt"
-                        }
-                    }
-                }
-            },
-            { $sort: { _id: -1 } }
-        ]);
+        const days = dailyProgress;
 
         let streak = 0;
-        let prevDate = new Date();
+        if (!days.length) {
+            return res.json({
+                watched,
+                categoryStats,
+                recentActivity,
+                dailyProgress,
+                streak: 0
+            });
+        }
+        let prevDate = null;
 
-        for (let day of days) {
+        for (let i = 0; i < days.length; i++) {
+            const d = new Date(days[i]._id);
 
-            const d = new Date(day._id);
-            const diff = Math.floor((prevDate - d) / (1000 * 60 * 60 * 24));
+            if (i === 0) {
+                const today = new Date();
+                const diff = Math.floor((today - d) / (1000 * 60 * 60 * 24));
 
-            if (diff <= 1) {
-                streak++;
+                if (diff > 1) break;
+
+                streak = 1;
                 prevDate = d;
             } else {
-                break;
-            }
+                const diff = Math.floor((prevDate - d) / (1000 * 60 * 60 * 24));
 
+                if (diff === 1) {
+                    streak++;
+                    prevDate = d;
+                } else {
+                    break;
+                }
+            }
         }
 
         res.json({
