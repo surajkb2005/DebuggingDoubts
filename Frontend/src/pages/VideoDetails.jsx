@@ -27,7 +27,7 @@ export default function VideoDetails() {
         if (!commentText.trim()) return;
 
         const { data } = await axios.post(
-            `http://localhost:5000/api/videos/${id}/comments`,
+            `${import.meta.env.VITE_API_URL}/videos/${id}/comments`,
             { text: commentText }
         );
 
@@ -42,7 +42,7 @@ export default function VideoDetails() {
     useEffect(() => {
         const fetchVideo = async () => {
             const { data } = await axios.get(
-                `http://localhost:5000/api/videos/${id}`
+                `${import.meta.env.VITE_API_URL}/videos/${id}`
             );
 
             setVideo(data);
