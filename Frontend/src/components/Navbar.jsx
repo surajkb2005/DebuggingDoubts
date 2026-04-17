@@ -1,10 +1,12 @@
 //Frontend\src\components\Navbar.jsx
-import React from "react";
+import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const closeMenu = () => setIsOpen(false);
 
   return (
     <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-gray-900/70 border-b border-gray-800 shadow-lg">
@@ -19,7 +21,7 @@ const Navbar = () => {
         </Link>
 
         {/* Links */}
-        <div className="flex items-center gap-6 text-sm font-medium">
+        <div className="hidden md:flex items-center gap-6 text-sm font-medium">
 
           <NavLink
             to="/"
@@ -101,7 +103,43 @@ const Navbar = () => {
             </>
           )}
         </div>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden text-gray-300 hover:text-white focus:outline-none"
+        >
+          {isOpen ? "✖" : "☰"}
+        </button>
       </div>
+      {isOpen && (
+        <div className="md:hidden absolute top-full left-0 w-full bg-gray-900 border-b border-gray-800 flex flex-col px-6 py-6 gap-4 shadow-xl">
+          <NavLink to="/" onClick={closeMenu} className="text-gray-300 text-lg hover:text-blue-400">Home</NavLink>
+          <NavLink to="/animations" onClick={closeMenu} className="text-gray-300 text-lg hover:text-blue-400">Animations</NavLink>
+          
+          {user ? (
+            <>
+              <NavLink to="/dashboard" onClick={closeMenu} className="text-gray-300 text-lg hover:text-blue-400">Dashboard</NavLink>
+              
+              {user.role === "admin" && (
+                <NavLink to="/admin" onClick={closeMenu} className="text-purple-400 text-lg hover:text-purple-300">Admin Panel 🚀</NavLink>
+              )}
+              
+              <div className="h-px w-full bg-gray-700 my-2"></div>
+              
+              <span className="text-gray-400 text-lg">
+                Welcome, <span className="text-white">{user.name}</span>
+              </span>
+              
+              <button onClick={() => { logout(); closeMenu(); }} className="mt-2 w-full bg-blue-600 py-3 rounded-lg text-white font-semibold active:scale-95">
+                Logout
+              </button>
+            </>
+          ) : (
+            <NavLink to="/auth" onClick={closeMenu} className="mt-2 w-full text-center bg-blue-600 py-3 rounded-lg text-white font-semibold active:scale-95">
+              Login / Register
+            </NavLink>
+          )}
+        </div>
+      )}
     </nav>
   );
 };

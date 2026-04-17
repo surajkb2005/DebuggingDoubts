@@ -64,7 +64,7 @@ export default function VideoDetails() {
 
                     {video.videoId && (
                         <iframe
-                            className="w-full h-[400px] rounded-xl mb-6"
+                            className="w-full aspect-video md:h-[400px] rounded-xl mb-6"
                             src={`https://www.youtube.com/embed/${video.videoId}`}
                             title={video.title}
                             allowFullScreen

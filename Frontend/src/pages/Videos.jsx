@@ -103,7 +103,7 @@ export default function Videos() {
             />
           </div>
           {/* Category Filters */}
-          <div className="flex flex-wrap justify-center gap-3 mb-10">
+          <div className="flex overflow-x-auto hide-scrollbar md:flex-wrap justify-start md:justify-center gap-3 mb-10 pb-2">
 
             {["All", "Web", "DSA", "OS", "DBMS", "CN"].map((cat) => (
 
@@ -111,13 +111,13 @@ export default function Videos() {
                 key={cat}
                 onClick={() => setCategory(cat)}
                 className={`
-        px-4 py-2 rounded-full text-sm font-medium
-        transition-all duration-200
-        ${category === cat
+                  whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium
+                  transition-all duration-200
+                  ${category === cat
                     ? "bg-blue-600 text-white shadow"
                     : "bg-gray-200 hover:bg-gray-300 text-gray-700"
                   }
-      `}
+                `}
               >
                 {cat}
               </button>

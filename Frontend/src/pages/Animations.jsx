@@ -143,7 +143,7 @@ const Animations = () => {
                     Visualizing complex concepts, one animation at a time.
                 </p>
             </footer>
-        </div>
+        </div >
     );
 };
 

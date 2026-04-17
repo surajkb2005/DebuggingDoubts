@@ -44,12 +44,12 @@ export default function Dashboard() {
     }, []);
 
     return (
-        <div className="min-h-screen w-full overflow-x-hidden px-4 md:px-6">
+        <div className="min-h-screen w-full overflow-x-hidden pt-24 pb-12 px-4 md:px-8">
 
-            <div className="max-w-7xl mx-auto px-6">
+            <div className="max-w-7xl mx-auto">
 
                 {/* Header */}
-                <div className="flex justify-between items-center mb-12">
+                <div className="flex flex-col-reverse md:flex-row justify-between items-center mb-12 gap-6 text-center md:text-left">
 
                     <div>
                         <h1 className="text-4xl font-bold text-gray-900">
@@ -70,7 +70,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid md:grid-cols-4 gap-6 mb-12">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
 
                     <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
                         <p className="text-gray-500 text-sm">Videos Watched</p>
@@ -133,7 +133,7 @@ export default function Dashboard() {
                         Achievements
                     </h2>
 
-                    <div className="grid grid-cols-3 gap-6 text-center">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 text-center">
 
                         <div className="p-4 bg-yellow-100 rounded-lg">
                             ⭐ First Video

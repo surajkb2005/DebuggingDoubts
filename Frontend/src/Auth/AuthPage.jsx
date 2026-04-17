@@ -59,11 +59,10 @@ const AuthPage = () => {
         <div className="min-h-screen flex items-center justify-center 
     bg-gradient-to-br from-[#0f172a] via-[#0b1a3a] to-[#022c22] px-4">
 
-            <div className="relative w-full max-w-5xl h-[500px] rounded-3xl 
-      overflow-hidden shadow-2xl bg-white/10 backdrop-blur-xl flex">
+            <div className="hidden md:flex relative w-full max-w-5xl h-[500px] rounded-3xl overflow-hidden shadow-2xl bg-white/10 backdrop-blur-xl">
 
                 {/* LOGIN */}
-                <div className="w-1/2 flex items-center justify-center">
+                <div className="w-1/2 h-full flex items-center justify-center p-8">
                     {isLogin && (
                         <form onSubmit={handleLogin} className="w-full max-w-sm text-white">
                             <h2 className="text-2xl mb-4">Login</h2>
@@ -95,7 +94,7 @@ const AuthPage = () => {
                 </div>
 
                 {/* REGISTER */}
-                <div className="w-1/2 flex items-center justify-center">
+                <div className="w-1/2 h-full flex items-center justify-center p-8">
                     {!isLogin && (
                         <form onSubmit={handleRegister} className="w-full max-w-sm text-white">
                             <h2 className="text-2xl mb-4">Register</h2>
@@ -151,10 +150,10 @@ const AuthPage = () => {
                 {/* SLIDING PANEL */}
                 <div
                     className={`absolute top-0 h-full w-1/2 z-20 
-          bg-gradient-to-r from-indigo-500 to-purple-600 
-          flex items-center justify-center text-white 
-          transition-all duration-700
-          ${isLogin ? "left-1/2" : "left-0"}`}
+                                bg-gradient-to-r from-indigo-500 to-purple-600 
+                                flex items-center justify-center text-white 
+                                transition-all duration-700
+                                ${isLogin ? "left-1/2" : "left-0"}`}
                 >
                     <div className="text-center px-6">
                         <h2 className="text-2xl font-bold mb-2">
@@ -178,6 +177,39 @@ const AuthPage = () => {
                         </button>
                     </div>
                 </div>
+            </div>
+            <div className="md:hidden w-full max-w-md bg-white/10 backdrop-blur-xl rounded-3xl p-6 text-white">
+                {isLogin ? (
+                    <form onSubmit={handleLogin} className="flex flex-col">
+                        <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
+                        
+                        {/* ADDED THESE INPUTS */}
+                        {error && <div className="text-red-400 text-sm mb-4 text-center">{error}</div>}
+                        <input placeholder="Email" className="input" onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })} />
+                        <input placeholder="Password" type="password" className="input" onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} />
+                        
+                        <button className="btn mt-4 mb-6">Login</button>
+                        <p className="text-center text-sm" onClick={() => setIsLogin(false)}>
+                            Don't have an account? <span className="underline">Register</span>
+                        </p>
+                    </form>
+                ) : (
+                    <form onSubmit={handleRegister} className="flex flex-col">
+                        <h2 className="text-3xl font-bold mb-6 text-center">Register</h2>
+                        
+                        {/* ADDED THESE INPUTS */}
+                        {error && <div className="text-red-400 text-sm mb-4 text-center">{error}</div>}
+                        <input placeholder="Name" className="input" onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })} />
+                        <input placeholder="Email" className="input" onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })} />
+                        <input placeholder="Password" type="password" className="input" onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })} />
+                        <input placeholder="Confirm Password" type="password" className="input" onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })} />
+                        
+                        <button className="btn mt-4 mb-6">Register</button>
+                        <p className="text-center text-sm" onClick={() => setIsLogin(true)}>
+                            Already have an account? <span className="underline">Login</span>
+                        </p>
+                    </form>
+                )}
             </div>
         </div>
     );

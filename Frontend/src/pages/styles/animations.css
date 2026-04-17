@@ -63,8 +63,8 @@ body {
 /* --- 3. Theme Toggle --- */
 .animations-page .theme-switch-wrapper {
     position: fixed;
-    top: 25px;
-    right: 25px;
+    top: 59px;
+    right: 20px;
     z-index: 1000;
 }
 
