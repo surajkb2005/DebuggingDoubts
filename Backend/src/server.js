@@ -20,6 +20,10 @@ app.use("/api/videos", videoRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 
+app.get('/api/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Test Route
 app.get("/", (req, res) => {
   res.send("Debugging Doubts API is running 🚀");
