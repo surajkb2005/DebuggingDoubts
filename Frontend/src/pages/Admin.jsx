@@ -3,6 +3,8 @@ import React from "react";
 import { useState } from "react";
 import axios from "../services/axiosInstance";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function Admin() {
     const [form, setForm] = useState({
         title: "",
@@ -29,7 +31,7 @@ export default function Admin() {
         };
 
         try {
-            await axios.post("/videos", payload);
+            await axios.post(`${API}/videos`, payload);
             alert("Video uploaded successfully 🚀");
             setForm({
                 title: "",

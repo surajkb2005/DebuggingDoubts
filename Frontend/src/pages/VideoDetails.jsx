@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "../services/axiosInstance";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function VideoDetails() {
     const { id } = useParams();
     const [video, setVideo] = useState(null);
@@ -11,7 +13,7 @@ export default function VideoDetails() {
 
     const handleLike = async () => {
         const { data } = await axios.put(
-            `/videos/${id}/like`
+            `${API}/videos/${id}/like`
         );
 
         setVideo(prev => ({
@@ -27,7 +29,7 @@ export default function VideoDetails() {
         if (!commentText.trim()) return;
 
         const { data } = await axios.post(
-            `${import.meta.env.VITE_API_URL}/videos/${id}/comments`,
+            `${API}/videos/${id}/comments`,
             { text: commentText }
         );
 
@@ -42,7 +44,7 @@ export default function VideoDetails() {
     useEffect(() => {
         const fetchVideo = async () => {
             const { data } = await axios.get(
-                `${import.meta.env.VITE_API_URL}/videos/${id}`
+                `${API}/videos/${id}`
             );
 
             setVideo(data);

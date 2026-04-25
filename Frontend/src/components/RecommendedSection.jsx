@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import axios from "../services/axiosInstance";
 import VideoCard from "./VideoCard";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function RecommendedSection() {
     const [videos, setVideos] = useState([]);
 
     useEffect(() => {
         const fetchRecommendations = async () => {
             try {
-                const { data } = await axios.get("/recommendations");
+                const { data } = await axios.get(`${API}/recommendations`);
                 setVideos(data);
             } catch (err) {
                 console.error(err);
