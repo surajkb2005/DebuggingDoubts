@@ -6,6 +6,8 @@ import axios from "../services/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import RecommendedSection from "../components/RecommendedSection";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function Dashboard() {
 
 
@@ -22,7 +24,7 @@ export default function Dashboard() {
     useEffect(() => {
 
         const fetchStats = async () => {
-            const { data } = await axios.get("/dashboard");
+            const { data } = await axios.get(`${API}/dashboard`);
             setStats({
                 watched: data.watched,
                 likes: data.likes,

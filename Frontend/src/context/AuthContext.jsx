@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import axios from "../services/axiosInstance";
 
 const AuthContext = createContext();
+const API = import.meta.env.VITE_API_URL;
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -16,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (data) => {
-        const res = await axios.post("/auth/login", data);
+        const res = await axios.post(`${API}/auth/login`, data);
         localStorage.setItem("user", JSON.stringify(res.data));
         setUser(res.data);
         return res.data;
@@ -24,7 +25,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (data) => {
         try {
-            const res = await axios.post("/auth/register", data);
+            const res = await axios.post(`${API}/auth/register`, data);
             localStorage.setItem("user", JSON.stringify(res.data));
             setUser(res.data);
         } catch (err) {
